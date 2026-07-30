@@ -1,9 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { NavigationBar } from 'expo-navigation-bar';
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BackHandler, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInRight,
+  SlideOutLeft,
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 
+import { colors } from '../theme/colors';
+import { borderRadius, spacing } from '../theme/spacing';
+import { fontSizes, fontWeights, letterSpacings } from '../theme/typography';
 import DynamicBackground from '../components/DynamicBackground';
-import { QUESTIONS } from '../constants/questions';
+import Avatar from '../components/ui/Avatar';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import QuestionTimer from '../components/ui/QuestionTimer';
 import { useGame } from '../context/GameContext';
+import { getAssignableQuestions, pickRandomItem, getPlayersForGenderTarget } from '../utils/game';
+import { AD_UNIT_IDS } from '../ads/adUnits';
 import type { Player, Question } from '../types/game';
 
 type GameScreenProps = {
@@ -15,62 +37,65 @@ type TurnState = {
   question: Question;
 };
 
-const pickRandomItem = <T,>(items: T[]): T | null => {
-  if (items.length === 0) {
-    return null;
-  }
+type AnswerState = 'idle' | 'correct' | 'incorrect';
 
-  const index = Math.floor(Math.random() * items.length);
-  return items[index] ?? null;
-};
-
-const getPlayersForGenderTarget = (
-  players: Player[],
-  genderTarget: Question['genderTarget'],
-): Player[] => {
-  if (genderTarget === 'all') {
-    return players;
-  }
-
-  return players.filter((player) => player.gender === genderTarget);
-};
-
-const getAssignableQuestions = (
-  level: Question['level'],
-  players: Player[],
-  excludedIds: string[] = [],
-): Question[] => {
-  return QUESTIONS.filter((question) => {
-    if (question.level !== level) {
-      return false;
-    }
-
-    if (excludedIds.includes(question.id)) {
-      return false;
-    }
-
-    const eligiblePlayers = getPlayersForGenderTarget(
-      players,
-      question.genderTarget,
-    );
-    return eligiblePlayers.length > 0;
-  });
-};
-
-const DECK_RESET_MESSAGE =
-  '¡Se terminaron las preguntas de este nivel! Reiniciando mazo...';
+const DECK_RESET_MESSAGE = '¡Se terminaron las preguntas! Reiniciando mazo...';
 
 const GameScreen = ({ onQuit }: GameScreenProps) => {
-  const { players, currentLevel, quitGame } = useGame();
+  const { players, currentLevel, scores, awardPoint, isMuted, toggleMute, quitGame, recordGameSession } = useGame();
   const [turn, setTurn] = useState<TurnState | null>(null);
+  const [answerState, setAnswerState] = useState<AnswerState>('idle');
   const [questionCount, setQuestionCount] = useState(0);
   const [usedQuestionIds, setUsedQuestionIds] = useState<string[]>([]);
   const [deckResetNotice, setDeckResetNotice] = useState<string | null>(null);
+  const [showQuitModal, setShowQuitModal] = useState(false);
+  const [turnKey, setTurnKey] = useState(0);
+  const pulseOpacity = useSharedValue(1);
+  const questionCountRef = useRef(0);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: pulseOpacity.value,
+  }));
+
+  const triggerPulse = useCallback(() => {
+    pulseOpacity.value = withSequence(
+      withTiming(0.6, { duration: 150 }),
+      withTiming(1, { duration: 150 }),
+    );
+  }, [pulseOpacity]);
+
+  const handleExitGame = useCallback(() => {
+    setShowQuitModal(false);
+    recordGameSession(questionCountRef.current);
+    quitGame();
+
+    if (Platform.OS === 'android') {
+      NavigationBar.setHidden(false);
+    }
+
+    onQuit();
+  }, [onQuit, quitGame, recordGameSession]);
 
   useEffect(() => {
-    if (!deckResetNotice) {
-      return;
+    if (Platform.OS === 'android') {
+      NavigationBar.setHidden(true);
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        setShowQuitModal(true);
+        return true;
+      });
+
+      return () => {
+        backHandler.remove();
+        NavigationBar.setHidden(false);
+      };
     }
+
+    return undefined;
+  }, []);
+
+  useEffect(() => {
+    if (!deckResetNotice) return;
 
     const timeout = setTimeout(() => {
       setDeckResetNotice(null);
@@ -80,14 +105,14 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   }, [deckResetNotice]);
 
   const handleNextQuestion = useCallback(() => {
+    setAnswerState('idle');
+
     let pool = getAssignableQuestions(currentLevel, players, usedQuestionIds);
 
     if (pool.length === 0) {
       const fullLevelPool = getAssignableQuestions(currentLevel, players);
 
-      if (fullLevelPool.length === 0) {
-        return;
-      }
+      if (fullLevelPool.length === 0) return;
 
       setDeckResetNotice(DECK_RESET_MESSAGE);
       setUsedQuestionIds([]);
@@ -95,81 +120,241 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     }
 
     const question = pickRandomItem(pool);
+    if (!question) return;
 
-    if (!question) {
-      return;
-    }
-
-    const eligiblePlayers = getPlayersForGenderTarget(
-      players,
-      question.genderTarget,
-    );
+    const eligiblePlayers = getPlayersForGenderTarget(players, question.genderTarget);
     const player = pickRandomItem(eligiblePlayers);
+    if (!player) return;
 
-    if (!player) {
-      return;
-    }
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    triggerPulse();
 
     setUsedQuestionIds((prev) => [...prev, question.id]);
     setTurn({ player, question });
-    setQuestionCount((prev) => prev + 1);
-  }, [currentLevel, players, usedQuestionIds]);
+    setTurnKey((prev) => prev + 1);
+    setQuestionCount((prev) => {
+      const next = prev + 1;
+      questionCountRef.current = next;
+      return next;
+    });
+  }, [currentLevel, players, usedQuestionIds, triggerPulse]);
 
-  const handleQuit = () => {
-    quitGame();
-    onQuit();
-  };
+  const handleCorrect = useCallback(() => {
+    if (!turn) return;
+    setAnswerState('correct');
+    awardPoint(turn.player.id);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [turn, awardPoint]);
+
+  const handleIncorrect = useCallback(() => {
+    setAnswerState('incorrect');
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  }, []);
 
   const genderLabel = turn?.player.gender === 'H' ? 'Hombre' : 'Mujer';
 
   return (
     <DynamicBackground currentLevel={currentLevel}>
       <View style={styles.screen}>
-        <Pressable
-          onPress={handleQuit}
-          style={({ pressed }) => [
-            styles.quitButton,
-            pressed && styles.quitButtonPressed,
-          ]}
-        >
-          <Text style={styles.quitButtonText}>Salir del juego</Text>
-        </Pressable>
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => setShowQuitModal(true)}
+            style={({ pressed }) => [
+              styles.topBarButton,
+              pressed && styles.topBarButtonPressed,
+            ]}
+          >
+            <MaterialCommunityIcons name="exit-to-app" size={16} color={colors.textDark} />
+            <Text style={styles.topBarButtonText}>Salir</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={toggleMute}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.topBarButton,
+              pressed && styles.topBarButtonPressed,
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={isMuted ? 'volume-off' : 'volume-high'}
+              size={20}
+              color={isMuted ? colors.textDark : colors.text}
+            />
+            <Text style={[styles.topBarButtonText, { color: isMuted ? colors.textDark : colors.text }]}>
+              {isMuted ? 'Mute' : 'Sonido'}
+            </Text>
+          </Pressable>
+        </View>
 
         {deckResetNotice && (
-          <View style={styles.resetNotice}>
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(200)}
+            style={styles.resetNotice}
+          >
+            <MaterialCommunityIcons name="refresh" size={14} color={colors.accent} />
             <Text style={styles.resetNoticeText}>{deckResetNotice}</Text>
-          </View>
+          </Animated.View>
         )}
 
         <View style={styles.main}>
           {turn ? (
-            <>
-              <Text style={styles.turnLabel}>Turno de:</Text>
-              <Text style={styles.playerName}>{turn.player.name}</Text>
-              <Text style={styles.playerGender}>{genderLabel}</Text>
+            <Animated.View
+              key={turnKey}
+              entering={SlideInRight.duration(300).springify()}
+              exiting={SlideOutLeft.duration(200)}
+              style={styles.turnContainer}
+            >
+              <View style={styles.playerBadge}>
+                <Avatar name={turn.player.name} gender={turn.player.gender} color={turn.player.avatarColor} imageIndex={turn.player.avatarIndex} size="md" />
+                <View>
+                  <Text style={styles.turnLabel}>Turno de:</Text>
+                  <Animated.View style={pulseStyle}>
+                    <Text style={styles.playerName}>{turn.player.name}</Text>
+                  </Animated.View>
+                  <View style={styles.genderRow}>
+                    <MaterialCommunityIcons
+                      name={turn.player.gender === 'H' ? 'gender-male' : 'gender-female'}
+                      size={12}
+                      color={colors.textDim}
+                    />
+                    <Text style={styles.playerGender}>{genderLabel}</Text>
+                  </View>
+                </View>
+                <View style={[styles.scoreBadge, { borderColor: turn.player.avatarColor }]}>
+                  <Text style={[styles.scoreText, { color: turn.player.avatarColor }]}>
+                    {scores[turn.player.id] ?? 0}
+                  </Text>
+                </View>
+              </View>
 
-              <Text style={styles.questionText}>{turn.question.text}</Text>
-            </>
+              <QuestionTimer turnKey={turnKey} duration={60} />
+
+              <Card variant="glass" style={styles.questionCard}>
+                <View style={styles.questionDecor} />
+                <Text style={styles.questionText}>{turn.question.text}</Text>
+              </Card>
+
+              {answerState === 'idle' && (
+                <View style={styles.answerRow}>
+                  <Pressable
+                    onPress={handleCorrect}
+                    style={({ pressed }) => [
+                      styles.answerBtn,
+                      styles.correctBtn,
+                      pressed && styles.answerBtnPressed,
+                    ]}
+                  >
+                    <Text style={styles.answerBtnIcon}>✅</Text>
+                    <Text style={styles.answerBtnText}>Respondió bien</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleIncorrect}
+                    style={({ pressed }) => [
+                      styles.answerBtn,
+                      styles.incorrectBtn,
+                      pressed && styles.answerBtnPressed,
+                    ]}
+                  >
+                    <Text style={styles.answerBtnIcon}>❌</Text>
+                    <Text style={styles.answerBtnText}>No respondió</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {answerState !== 'idle' && (
+                <Animated.View
+                  entering={FadeIn.duration(200)}
+                  style={[
+                    styles.feedbackRow,
+                    answerState === 'correct' ? styles.feedbackCorrect : styles.feedbackIncorrect,
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={answerState === 'correct' ? 'party-popper' : 'emoticon-sad'}
+                    size={20}
+                    color={answerState === 'correct' ? colors.success : colors.error}
+                  />
+                  <Text
+                    style={[
+                      styles.feedbackText,
+                      { color: answerState === 'correct' ? colors.success : colors.error },
+                    ]}
+                  >
+                    {answerState === 'correct' ? '+1 Punto' : 'Sin punto'}
+                  </Text>
+                </Animated.View>
+              )}
+            </Animated.View>
           ) : (
-            <Text style={styles.placeholderText}>
-              Pulsa "Siguiente Pregunta" para comenzar la ronda
-            </Text>
-          )}
-
-          {questionCount > 0 && (
-            <Text style={styles.counterText}>Pregunta #{questionCount}</Text>
+            <View style={styles.placeholder}>
+              <MaterialCommunityIcons
+                name="cards-playing-outline"
+                size={48}
+                color={colors.textDark}
+              />
+              <Text style={styles.placeholderText}>
+                Presiona "Comenzar Ronda" para iniciar
+              </Text>
+            </View>
           )}
         </View>
 
-        <Pressable
-          onPress={handleNextQuestion}
-          style={({ pressed }) => [
-            styles.nextButton,
-            pressed && styles.nextButtonPressed,
-          ]}
+        {!turn && (
+          <Button
+            label="Comenzar Ronda"
+            onPress={handleNextQuestion}
+          />
+        )}
+
+        {turn && answerState !== 'idle' && (
+          <Button
+            label="Siguiente Pregunta"
+            onPress={handleNextQuestion}
+          />
+        )}
+
+        {currentLevel !== 3 && (
+          <BannerAd
+            unitId={AD_UNIT_IDS.banner}
+            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          />
+        )}
+
+        <Modal
+          visible={showQuitModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowQuitModal(false)}
         >
-          <Text style={styles.nextButtonText}>Siguiente Pregunta</Text>
-        </Pressable>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <MaterialCommunityIcons
+                name="heart-broken"
+                size={40}
+                color={colors.accent}
+              />
+              <Text style={styles.modalTitle}>¿Salir del juego?</Text>
+              <Text style={styles.modalSubtitle}>
+                Perderás el progreso de esta ronda
+              </Text>
+              <View style={styles.modalButtons}>
+                <Button
+                  label="Cancelar"
+                  variant="ghost"
+                  onPress={() => setShowQuitModal(false)}
+                  style={styles.modalButton}
+                />
+                <Button
+                  label="Salir"
+                  onPress={handleExitGame}
+                  style={styles.modalButton}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </DynamicBackground>
   );
@@ -180,94 +365,221 @@ export default GameScreen;
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 56,
-    paddingBottom: 32,
+    paddingHorizontal: spacing['4xl'],
   },
-  quitButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.xs,
   },
-  quitButtonPressed: {
+  topBarButton: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  topBarButtonPressed: {
     opacity: 0.7,
   },
-  quitButtonText: {
-    color: '#777777',
-    fontSize: 13,
-    fontWeight: '600',
+  topBarButtonText: {
+    color: colors.textDark,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
   },
   resetNotice: {
-    backgroundColor: 'rgba(255, 46, 99, 0.12)',
+    backgroundColor: colors.accentGlow,
     borderColor: 'rgba(255, 46, 99, 0.35)',
-    borderRadius: 8,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   resetNoticeText: {
-    color: '#FF2E63',
-    fontSize: 12,
-    fontWeight: '600',
+    color: colors.accent,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
     lineHeight: 18,
-    textAlign: 'center',
+    flex: 1,
   },
   main: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
+  },
+  turnContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  playerBadge: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing['5xl'],
+    width: '100%',
   },
   turnLabel: {
-    color: '#AAAAAA',
-    fontSize: 14,
-    letterSpacing: 0.5,
-    marginBottom: 6,
+    color: colors.textDim,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+    letterSpacing: letterSpacings.wider,
+    marginBottom: 2,
     textTransform: 'uppercase',
   },
   playerName: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '700',
-    marginBottom: 4,
-    textAlign: 'center',
+    color: colors.text,
+    fontSize: fontSizes['2xl'],
+    fontWeight: fontWeights.bold,
+  },
+  genderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
   },
   playerGender: {
-    color: '#888888',
-    fontSize: 13,
-    marginBottom: 32,
+    color: colors.textDim,
+    fontSize: fontSizes.xs,
+  },
+  questionCard: {
+    width: '100%',
+    paddingVertical: spacing['5xl'],
+    paddingHorizontal: spacing['4xl'],
+    marginBottom: spacing['5xl'],
+  },
+  questionDecor: {
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    height: 3,
+    marginBottom: spacing.xl,
+    opacity: 0.4,
+    width: 40,
   },
   questionText: {
-    color: '#F2F2F2',
-    fontSize: 22,
-    fontWeight: '500',
-    lineHeight: 32,
+    color: colors.textSecondary,
+    fontSize: fontSizes['4xl'],
+    fontWeight: fontWeights.medium,
+    lineHeight: 34,
     textAlign: 'center',
   },
+  placeholder: {
+    alignItems: 'center',
+    gap: spacing.xl,
+  },
   placeholderText: {
-    color: '#888888',
-    fontSize: 16,
+    color: colors.textDim,
+    fontSize: fontSizes.xl,
     lineHeight: 24,
     textAlign: 'center',
   },
-  counterText: {
-    color: '#666666',
-    fontSize: 12,
-    marginTop: 28,
-  },
-  nextButton: {
+  scoreBadge: {
     alignItems: 'center',
-    backgroundColor: '#FF2E63',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: colors.accentDim,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    height: 36,
+    justifyContent: 'center',
+    marginLeft: 'auto',
+    width: 36,
   },
-  nextButtonPressed: {
-    opacity: 0.9,
+  scoreText: {
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
   },
-  nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+  answerRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  answerBtn: {
+    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  correctBtn: {
+    backgroundColor: colors.success + '20',
+    borderColor: colors.success,
+    borderWidth: 1,
+  },
+  incorrectBtn: {
+    backgroundColor: colors.error + '20',
+    borderColor: colors.error,
+    borderWidth: 1,
+  },
+  answerBtnPressed: {
+    opacity: 0.6,
+  },
+  answerBtnIcon: {
+    fontSize: 18,
+  },
+  answerBtnText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+  },
+  feedbackRow: {
+    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  feedbackCorrect: {
+    backgroundColor: colors.success + '15',
+  },
+  feedbackIncorrect: {
+    backgroundColor: colors.error + '15',
+  },
+  feedbackText: {
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.bold,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing['4xl'],
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    padding: spacing['5xl'],
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: fontSizes['3xl'],
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    color: colors.textMuted,
+    fontSize: fontSizes.md,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
   },
 });

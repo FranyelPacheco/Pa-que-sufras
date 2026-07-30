@@ -1,9 +1,11 @@
 // Un "type" o "interface" es como un molde de galletas. Define la forma exacta de los datos.
 
 export interface Player {
-  id: string;       // Un identificador único para que la IA no confunda a dos jugadores con el mismo nombre
-  name: string;     // El nombre del jugador
-  gender: 'H' | 'M'; // Restringimos el género: o es 'H' (Hombre) o es 'M' (Mujer). No permite otra cosa.
+  id: string;
+  name: string;
+  gender: 'H' | 'M';
+  avatarColor: string;
+  avatarIndex: number;
 }
 
 export interface Question {

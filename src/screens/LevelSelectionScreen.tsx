@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,72 +7,143 @@ import {
   Text,
   View,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { BannerAd, BannerAdSize, MobileAds, useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
+import Animated, {
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { colors } from '../theme/colors';
+import { borderRadius, spacing } from '../theme/spacing';
+import { fontSizes, fontWeights, letterSpacings } from '../theme/typography';
+import DynamicBackground from '../components/DynamicBackground';
+import Header from '../components/ui/Header';
 import { useGame } from '../context/GameContext';
+import { AD_UNIT_IDS } from '../ads/adUnits';
 
 type GameLevel = 1 | 2 | 3;
 
-type LevelCard = {
+type LevelCardData = {
   level: GameLevel;
   title: string;
   description: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
   isPremium?: boolean;
 };
 
-const LEVELS: LevelCard[] = [
+const LEVELS: LevelCardData[] = [
   {
     level: 1,
     title: 'Conociéndonos',
-    description:
-      'Preguntas ligeras para romper el hielo. Ideal para reuniones casuales.',
+    description: 'Rompe el hielo con preguntas ligeras.',
+    icon: 'chat-processing-outline',
   },
   {
     level: 2,
     title: 'Juego previo',
-    description:
-      'La incomodidad sube. Secretos y confesiones que te harán ruborizar.',
+    description: 'Secretos y confesiones que te harán ruborizar.',
+    icon: 'fire',
   },
   {
     level: 3,
     title: 'Se 😈',
-    description: 'Alto voltaje. Preguntas picantes y sin filtros.',
+    description: 'Alto voltaje. Preguntas picantes sin filtros.',
+    icon: 'emoticon-devil-outline',
     isPremium: true,
   },
 ];
+
+const FAKE_AD_DURATION = 2000;
 
 type LevelSelectionScreenProps = {
   onBack: () => void;
 };
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
-  const { startGame } = useGame();
-  const [isLevel3Unlocked, setIsLevel3Unlocked] = useState(false);
+  const { startGame, isLevel3Unlocked, unlockLevel3 } = useGame();
   const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const unlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pendingStart, setPendingStart] = useState(false);
+  const adsInitialized = useRef(false);
+
+  const ad = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
 
   useEffect(() => {
-    return () => {
-      if (unlockTimeoutRef.current) {
-        clearTimeout(unlockTimeoutRef.current);
-      }
-    };
+    if (adsInitialized.current) return;
+    adsInitialized.current = true;
+    try {
+      void MobileAds().initialize();
+    } catch {}
   }, []);
 
-  const handleLevelPress = (level: GameLevel) => {
-    if (isWatchingAd) {
+  useEffect(() => {
+    if (ad.isLoaded) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [ad.isLoaded]);
+
+  const startLevel3Game = useCallback(() => {
+    setIsWatchingAd(false);
+    setPendingStart(false);
+    unlockLevel3();
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    startGame(3);
+  }, [unlockLevel3, startGame]);
+
+  const handleAdClose = useCallback(() => {
+    if (ad.isEarnedReward) {
+      startLevel3Game();
+    } else {
+      setIsWatchingAd(false);
+      setPendingStart(false);
+    }
+  }, [ad.isEarnedReward, startLevel3Game]);
+
+  useEffect(() => {
+    if (!pendingStart) return;
+    if (ad.isLoaded) {
+      setIsWatchingAd(true);
+      ad.show();
       return;
     }
+    if (ad.error) {
+      runFallbackAd();
+      return;
+    }
+  }, [pendingStart, ad.isLoaded, ad.error]);
+
+  useEffect(() => {
+    if (!isWatchingAd || !ad.isClosed) return;
+    handleAdClose();
+  }, [ad.isClosed, isWatchingAd, handleAdClose]);
+
+  const runFallbackAd = useCallback(() => {
+    setIsWatchingAd(true);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+    setTimeout(() => {
+      setIsWatchingAd(false);
+      setPendingStart(false);
+      startLevel3Game();
+    }, FAKE_AD_DURATION);
+  }, [startLevel3Game]);
+
+  const handleLevelPress = (level: GameLevel) => {
+    if (isWatchingAd) return;
+
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     if (level === 3 && !isLevel3Unlocked) {
-      setIsWatchingAd(true);
-
-      unlockTimeoutRef.current = setTimeout(() => {
-        setIsWatchingAd(false);
-        setIsLevel3Unlocked(true);
-        startGame(3);
-        unlockTimeoutRef.current = null;
-      }, 2000);
-
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      ad.load();
+      setPendingStart(true);
       return;
     }
 
@@ -80,65 +151,124 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
   };
 
   return (
-    <View style={styles.screen}>
-      <Pressable
-        onPress={onBack}
-        disabled={isWatchingAd}
-        style={({ pressed }) => [
-          styles.backButton,
-          pressed && styles.backButtonPressed,
-          isWatchingAd && styles.backButtonDisabled,
-        ]}
-      >
-        <Text style={styles.backButtonText}>← Volver</Text>
-      </Pressable>
+    <DynamicBackground currentLevel={1}>
+      <View style={styles.screen}>
+        <Pressable
+          onPress={onBack}
+          disabled={isWatchingAd}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.backButtonPressed,
+          ]}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={20} color={colors.textDim} />
+          <Text style={styles.backButtonText}>Volver</Text>
+        </Pressable>
 
-      <Text style={styles.heading}>Elige la intensidad</Text>
-      <Text style={styles.subheading}>
-        Cada nivel cambia el tono de las preguntas
-      </Text>
+        <Header
+          title="Elige la intensidad"
+          subtitle="Cada nivel cambia el tono de las preguntas"
+        />
 
-      <ScrollView
-        contentContainerStyle={styles.cardsContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {LEVELS.map((item) => {
-          const isLocked = item.level === 3 && !isLevel3Unlocked && !isWatchingAd;
-          const isLoadingLevel3 = item.level === 3 && isWatchingAd;
+        <ScrollView
+          contentContainerStyle={styles.cardsContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {LEVELS.map((item, index) => {
+            const isLocked = item.level === 3 && !isLevel3Unlocked && !isWatchingAd;
+            const isLoadingLevel3 = item.level === 3 && isWatchingAd;
+            const isUnlocked = item.level === 3 && isLevel3Unlocked && !isWatchingAd;
+            const levelColor = item.level === 1 ? colors.level1 : item.level === 2 ? colors.level2 : colors.level3;
 
-          return (
-            <Pressable
-              key={item.level}
-              disabled={isWatchingAd}
-              onPress={() => handleLevelPress(item.level)}
-              style={({ pressed }) => [
-                styles.card,
-                item.isPremium ? styles.cardPremium : styles.cardStandard,
-                pressed && !isWatchingAd && styles.cardPressed,
-                isWatchingAd && item.level !== 3 && styles.cardDisabled,
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.levelTag}>Nivel {item.level}</Text>
-                {isLocked && <Text style={styles.lockIcon}>🔒</Text>}
-              </View>
+            return (
+              <Animated.View
+                key={item.level}
+                entering={FadeInUp.duration(400).springify().delay(index * 100)}
+              >
+                <AnimatedPressable
+                  disabled={isWatchingAd}
+                  onPress={() => handleLevelPress(item.level)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    {
+                      borderColor: item.isPremium ? levelColor.border : colors.border,
+                    },
+                    pressed && !isWatchingAd && styles.cardPressed,
+                    isWatchingAd && item.level !== 3 && styles.cardDisabled,
+                  ]}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardHeaderLeft}>
+                      <MaterialCommunityIcons
+                        name={item.icon}
+                        size={22}
+                        color={levelColor.accent}
+                      />
+                      <Text style={[styles.levelTag, { color: levelColor.accent }]}>
+                        Nivel {item.level}
+                      </Text>
+                    </View>
+                    {isLocked && <LockIcon />}
+                    {isUnlocked && (
+                      <MaterialCommunityIcons
+                        name="check-circle"
+                        size={22}
+                        color={colors.success}
+                      />
+                    )}
+                  </View>
 
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <Text style={styles.cardDescription}>{item.description}</Text>
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  <Text style={styles.cardDescription}>{item.description}</Text>
 
-              {isLoadingLevel3 && (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator color="#FF2E63" size="small" />
-                  <Text style={styles.loadingText}>
-                    Viendo anuncio para desbloquear...
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
+                  {isLoadingLevel3 && (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator color={colors.accent} size="small" />
+                      <Text style={styles.loadingText}>
+                        {ad.isLoaded
+                          ? 'Preparando anuncio...'
+                          : 'Cargando anuncio para desbloquear...'}
+                      </Text>
+                    </View>
+                  )}
+                </AnimatedPressable>
+              </Animated.View>
+            );
+          })}
+        </ScrollView>
+
+        <BannerAd
+          unitId={AD_UNIT_IDS.banner}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        />
+      </View>
+    </DynamicBackground>
+  );
+};
+
+const LockIcon = () => {
+  const shake = useSharedValue(0);
+
+  useEffect(() => {
+    shake.value = withRepeat(
+      withSequence(
+        withTiming(-3, { duration: 100 }),
+        withTiming(3, { duration: 100 }),
+        withTiming(0, { duration: 100 }),
+      ),
+      2,
+      false,
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <MaterialCommunityIcons name="lock-outline" size={20} color={colors.textDim} />
+    </Animated.View>
   );
 };
 
@@ -147,53 +277,33 @@ export default LevelSelectionScreen;
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
-    paddingHorizontal: 24,
-    paddingTop: 56,
-    paddingBottom: 24,
+    paddingHorizontal: spacing['4xl'],
   },
   backButton: {
     alignSelf: 'flex-start',
-    marginBottom: 20,
-    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing['3xl'],
+    paddingVertical: spacing.xs,
   },
   backButtonPressed: {
     opacity: 0.7,
   },
-  backButtonDisabled: {
-    opacity: 0.4,
-  },
   backButtonText: {
-    color: '#888888',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  heading: {
-    color: '#FFFFFF',
-    fontSize: 26,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  subheading: {
-    color: '#B0B0B0',
-    fontSize: 14,
-    marginBottom: 24,
+    color: colors.textDim,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
   },
   cardsContainer: {
-    gap: 14,
-    paddingBottom: 16,
+    gap: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   card: {
-    backgroundColor: '#111111',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    padding: 18,
-  },
-  cardStandard: {
-    borderColor: '#2A2A2A',
-  },
-  cardPremium: {
-    borderColor: '#FF2E63',
+    padding: spacing['3xl'],
   },
   cardPressed: {
     opacity: 0.92,
@@ -205,39 +315,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: spacing.md,
+  },
+  cardHeaderLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   levelTag: {
-    color: '#FF2E63',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.6,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    letterSpacing: letterSpacings.wider,
     textTransform: 'uppercase',
   },
-  lockIcon: {
-    fontSize: 16,
-  },
   cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
+    color: colors.text,
+    fontSize: fontSizes['3xl'],
+    fontWeight: fontWeights.bold,
+    marginBottom: spacing.sm,
   },
   cardDescription: {
-    color: '#AAAAAA',
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: fontSizes.md,
     lineHeight: 20,
   },
   loadingRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
   loadingText: {
-    color: '#FF2E63',
+    color: colors.accent,
     flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
   },
 });

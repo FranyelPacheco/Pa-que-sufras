@@ -1,0 +1,106 @@
+import { QUESTIONS } from '../src/constants/questions';
+import { getAssignableQuestions, pickRandomItem } from '../src/utils/game';
+import type { Player } from '../src/types/game';
+
+describe('Questions bank', () => {
+  it('should have 100 questions per level', () => {
+    const level1 = QUESTIONS.filter((q) => q.level === 1);
+    const level2 = QUESTIONS.filter((q) => q.level === 2);
+    const level3 = QUESTIONS.filter((q) => q.level === 3);
+
+    expect(level1.length).toBe(100);
+    expect(level2.length).toBe(100);
+    expect(level3.length).toBe(100);
+  });
+
+  it('should have unique IDs for all questions', () => {
+    const ids = QUESTIONS.map((q) => q.id);
+    const uniqueIds = new Set(ids);
+    expect(uniqueIds.size).toBe(ids.length);
+  });
+
+  it('should have valid genderTarget values', () => {
+    QUESTIONS.forEach((q) => {
+      expect(['all', 'H', 'M']).toContain(q.genderTarget);
+    });
+  });
+
+  it('should have valid level values', () => {
+    QUESTIONS.forEach((q) => {
+      expect([1, 2, 3]).toContain(q.level);
+    });
+  });
+});
+
+describe('Question assignment logic', () => {
+  const malePlayer: Player = {
+    id: '1',
+    name: 'Carlos',
+    gender: 'H',
+    avatarColor: '#FF2E63',
+    avatarIndex: 0,
+  };
+
+  const femalePlayer: Player = {
+    id: '2',
+    name: 'María',
+    gender: 'M',
+    avatarColor: '#4ADE80',
+    avatarIndex: 1,
+  };
+
+  const mixedPlayers: Player[] = [malePlayer, femalePlayer];
+  const onlyMalePlayers: Player[] = [malePlayer];
+  const onlyFemalePlayers: Player[] = [femalePlayer];
+
+  it('should return all level 1 questions for mixed group', () => {
+    const pool = getAssignableQuestions(1, mixedPlayers);
+    expect(pool.length).toBe(100);
+  });
+
+  it('should filter out male-only questions when only females play', () => {
+    const pool = getAssignableQuestions(2, onlyFemalePlayers);
+    const hasMaleOnly = pool.some((q) => q.genderTarget === 'H');
+    expect(hasMaleOnly).toBe(false);
+  });
+
+  it('should filter out female-only questions when only males play', () => {
+    const pool = getAssignableQuestions(2, onlyMalePlayers);
+    const hasFemaleOnly = pool.some((q) => q.genderTarget === 'M');
+    expect(hasFemaleOnly).toBe(false);
+  });
+
+  it('should exclude already-used question IDs', () => {
+    const pool = getAssignableQuestions(1, mixedPlayers, ['q-l1-01', 'q-l1-02']);
+    expect(pool.length).toBe(98);
+    expect(pool.some((q) => q.id === 'q-l1-01')).toBe(false);
+    expect(pool.some((q) => q.id === 'q-l1-02')).toBe(false);
+  });
+
+  it('should return empty pool when all questions are excluded', () => {
+    const allIds = QUESTIONS.filter((q) => q.level === 1).map((q) => q.id);
+    const pool = getAssignableQuestions(1, mixedPlayers, allIds);
+    expect(pool.length).toBe(0);
+  });
+
+  it('should handle empty player list', () => {
+    const pool = getAssignableQuestions(1, []);
+    expect(pool.length).toBe(0);
+  });
+});
+
+describe('pickRandomItem', () => {
+  it('should return null for empty array', () => {
+    expect(pickRandomItem([])).toBeNull();
+  });
+
+  it('should return the only item for single-element array', () => {
+    expect(pickRandomItem([42])).toBe(42);
+  });
+
+  it('should return an item from the array', () => {
+    const items = [1, 2, 3, 4, 5];
+    const result = pickRandomItem(items);
+    expect(items).toContain(result);
+  });
+});

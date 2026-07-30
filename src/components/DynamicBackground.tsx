@@ -1,5 +1,16 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type GameLevel = 1 | 2 | 3;
 
@@ -8,172 +19,163 @@ type DynamicBackgroundProps = {
   children: ReactNode;
 };
 
-const DynamicBackground = ({ currentLevel, children }: DynamicBackgroundProps) => {
-  return (
-    <View style={[styles.root, levelBaseStyles[currentLevel]]}>
-      {currentLevel === 1 && <LevelOneAmbience />}
-      {currentLevel === 2 && <LevelTwoAmbience />}
-      {currentLevel === 3 && <LevelThreeAmbience />}
+type FloatingIconConfig = {
+  icon: string;
+  x: `${number}%`;
+  y: number;
+  floatAmt: number;
+  duration: number;
+  delay: number;
+  size: number;
+  drift?: number;
+};
 
-      <View style={styles.content}>{children}</View>
+type LevelConfig = {
+  gradient: readonly [string, string];
+  accent: string;
+  icons: FloatingIconConfig[];
+};
+
+const LEVEL_CONFIG: Record<GameLevel, LevelConfig> = {
+  1: {
+    gradient: ['#1A1A2E', '#0A0A0A'] as const,
+    accent: '#8B5CF6',
+    icons: [
+      { icon: 'glass-wine', x: '10%', y: 15, floatAmt: 22, duration: 3200, delay: 0, size: 32, drift: 8 },
+      { icon: 'chat-processing', x: '76%', y: 28, floatAmt: 26, duration: 3800, delay: 800, size: 30, drift: 10 },
+      { icon: 'guitar-pick', x: '18%', y: 65, floatAmt: 18, duration: 3000, delay: 400, size: 28, drift: 6 },
+      { icon: 'lightbulb-outline', x: '74%', y: 78, floatAmt: 24, duration: 3500, delay: 1200, size: 34, drift: 12 },
+    ],
+  },
+  2: {
+    gradient: ['#1A0A2E', '#0A0A0A'] as const,
+    accent: '#FF2E63',
+    icons: [
+      { icon: 'high-heel', x: '12%', y: 18, floatAmt: 20, duration: 3400, delay: 0, size: 30, drift: 8 },
+      { icon: 'heart-broken', x: '74%', y: 32, floatAmt: 28, duration: 4000, delay: 600, size: 34, drift: 10 },
+      { icon: 'lips', x: '20%', y: 68, floatAmt: 22, duration: 3200, delay: 1000, size: 32, drift: 6 },
+      { icon: 'fire', x: '72%', y: 82, floatAmt: 18, duration: 3600, delay: 1400, size: 36, drift: 12 },
+    ],
+  },
+  3: {
+    gradient: ['#2E0A0A', '#0A0A0A'] as const,
+    accent: '#4ADE80',
+    icons: [
+      { icon: 'handcuffs', x: '8%', y: 16, floatAmt: 24, duration: 3000, delay: 0, size: 34, drift: 8 },
+      { icon: 'chili-hot', x: '78%', y: 26, floatAmt: 20, duration: 3700, delay: 500, size: 32, drift: 10 },
+      { icon: 'devil', x: '14%', y: 66, floatAmt: 26, duration: 3300, delay: 900, size: 36, drift: 6 },
+      { icon: 'mask', x: '76%', y: 80, floatAmt: 22, duration: 3900, delay: 1300, size: 32, drift: 12 },
+    ],
+  },
+};
+
+const FloatingIcon = ({ icon, x, y, floatAmt, duration, delay, size, drift, accent }: FloatingIconConfig & { accent: string }) => {
+  const float = useSharedValue(0);
+  const side = useSharedValue(0);
+
+  float.value = withDelay(delay, withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true));
+  side.value = withDelay(delay, withRepeat(withTiming(1, { duration: duration * 1.3, easing: Easing.inOut(Easing.sin) }), -1, true));
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: (float.value - 0.5) * floatAmt * 2 },
+      { translateX: (side.value - 0.5) * (drift ?? 0) * 2 },
+    ],
+  }));
+
+  return (
+    <View style={[styles.iconBox, { left: x as any, top: `${y}%` as any }]}>
+      <Animated.View style={animStyle}>
+        <MaterialCommunityIcons name={icon as any} size={size} color={accent} style={{ opacity: 0.18 }} />
+      </Animated.View>
     </View>
   );
 };
 
-const LevelOneAmbience = () => (
-  <>
-    <View style={[styles.glowOrb, styles.level1OrbTop]} />
-    <View style={[styles.glowOrb, styles.level1OrbBottom]} />
-    <View style={[styles.accentLine, styles.level1LineLeft]} />
-    <View style={[styles.accentLine, styles.level1LineRight]} />
-  </>
-);
+const AmbientOrb = ({ accent }: { accent: string }) => {
+  const progress = useSharedValue(0);
+  progress.value = withRepeat(withTiming(1, { duration: 4000 }), -1, true);
 
-const LevelTwoAmbience = () => (
-  <>
-    <View style={[styles.glowOrb, styles.level2OrbPink]} />
-    <View style={[styles.glowOrb, styles.level2OrbViolet]} />
-    <View style={[styles.neonStripe, styles.level2StripeTop]} />
-    <View style={[styles.neonStripe, styles.level2StripeBottom]} />
-  </>
-);
+  const style = useAnimatedStyle(() => ({
+    opacity: 0.06 + progress.value * 0.04,
+    transform: [
+      { translateX: progress.value * 15 },
+      { translateY: progress.value * -12 },
+    ],
+  }));
 
-const LevelThreeAmbience = () => (
-  <>
-    <View style={[styles.glowOrb, styles.level3OrbCenter]} />
-    <View style={[styles.fadeLayer, styles.level3FadeSoft]} />
-    <View style={[styles.fadeLayer, styles.level3FadeMid]} />
-    <View style={[styles.fadeLayer, styles.level3FadeDeep]} />
-  </>
-);
+  return (
+    <Animated.View
+      style={[
+        styles.orb,
+        {
+          backgroundColor: accent,
+          height: 260,
+          right: -80,
+          top: -60,
+          width: 260,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+const DynamicBackground = ({ currentLevel, children }: DynamicBackgroundProps) => {
+  const insets = useSafeAreaInsets();
+  const config = LEVEL_CONFIG[currentLevel];
+
+  return (
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[...config.gradient]}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <View pointerEvents="none" style={styles.ambienceLayer}>
+        <AmbientOrb accent={config.accent} />
+        {config.icons.map((item, i) => (
+          <FloatingIcon key={i} {...item} accent={config.accent} />
+        ))}
+      </View>
+
+      <View
+        style={[
+          styles.content,
+          {
+            paddingTop: Math.max(insets.top, 20),
+            paddingBottom: Math.max(insets.bottom, 16),
+          },
+        ]}
+      >
+        {children}
+      </View>
+    </View>
+  );
+};
 
 export default DynamicBackground;
-
-const levelBaseStyles = StyleSheet.create({
-  1: {
-    backgroundColor: '#0A0A0A',
-  },
-  2: {
-    backgroundColor: '#0F051D',
-  },
-  3: {
-    backgroundColor: '#1A030A',
-  },
-});
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     overflow: 'hidden',
   },
+  ambienceLayer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 0,
+  },
   content: {
     flex: 1,
     zIndex: 1,
   },
-  glowOrb: {
+  orb: {
     borderRadius: 999,
     position: 'absolute',
   },
-  accentLine: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    opacity: 0.04,
+  iconBox: {
     position: 'absolute',
-  },
-  neonStripe: {
-    borderRadius: 999,
-    opacity: 0.12,
-    position: 'absolute',
-  },
-  fadeLayer: {
-    backgroundColor: '#0A0A0A',
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-  },
-
-  // Nivel 1 — lounge elegante, luces neutras
-  level1OrbTop: {
-    backgroundColor: '#C8C8C8',
-    height: 220,
-    opacity: 0.06,
-    right: -70,
-    top: -40,
-    width: 220,
-  },
-  level1OrbBottom: {
-    backgroundColor: '#9A9A9A',
-    bottom: 80,
-    height: 180,
-    left: -60,
-    opacity: 0.05,
-    width: 180,
-  },
-  level1LineLeft: {
-    height: 1,
-    left: 24,
-    top: '32%',
-    width: '28%',
-  },
-  level1LineRight: {
-    height: 1,
-    right: 24,
-    top: '58%',
-    width: '22%',
-  },
-
-  // Nivel 2 — club / fiesta, destellos neón
-  level2OrbPink: {
-    backgroundColor: '#FF2E63',
-    height: 200,
-    opacity: 0.14,
-    right: -50,
-    top: 120,
-    width: 200,
-  },
-  level2OrbViolet: {
-    backgroundColor: '#8B5CF6',
-    bottom: 100,
-    height: 240,
-    left: -80,
-    opacity: 0.1,
-    width: 240,
-  },
-  level2StripeTop: {
-    backgroundColor: '#FF2E63',
-    height: 2,
-    left: 32,
-    top: 72,
-    width: 96,
-  },
-  level2StripeBottom: {
-    backgroundColor: '#C084FC',
-    bottom: 140,
-    height: 2,
-    right: 40,
-    width: 72,
-  },
-
-  // Nivel 3 — íntimo, degradado hacia negro
-  level3OrbCenter: {
-    alignSelf: 'center',
-    backgroundColor: '#FF2E63',
-    height: 260,
-    opacity: 0.08,
-    top: '18%',
-    width: 260,
-  },
-  level3FadeSoft: {
-    height: '22%',
-    opacity: 0.15,
-  },
-  level3FadeMid: {
-    height: '38%',
-    opacity: 0.35,
-  },
-  level3FadeDeep: {
-    height: '55%',
-    opacity: 0.72,
   },
 });
