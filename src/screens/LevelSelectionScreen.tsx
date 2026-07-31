@@ -79,12 +79,31 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
     if (adsInitialized.current) return;
     adsInitialized.current = true;
     try {
-      void MobileAds().initialize();
-    } catch {}
-  }, []);
+      void MobileAds()
+        .initialize()
+        .then(() => {
+          console.log('[AdMob] SDK inicializado, precargando rewarded interstitial...');
+          ad.load();
+        })
+        .catch((err) => {
+          console.warn('[AdMob] Error inicializando SDK:', err);
+        });
+    } catch (err) {
+      console.warn('[AdMob] Error en MobileAds().initialize():', err);
+    }
+  }, [ad]);
+
+  useEffect(() => {
+    if (!ad.error) return;
+    const err = ad.error as Error & { code?: number };
+    console.warn(
+      `[AdMob] Error cargando rewarded interstitial: code=${err.code ?? 'N/A'} message=${err.message}`,
+    );
+  }, [ad.error]);
 
   useEffect(() => {
     if (ad.isLoaded) {
+      console.log('[AdMob] Rewarded interstitial listo para mostrarse');
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }, [ad.isLoaded]);
@@ -98,13 +117,14 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
   }, [unlockLevel3, startGame]);
 
   const handleAdClose = useCallback(() => {
+    ad.load();
     if (ad.isEarnedReward) {
       startLevel3Game();
     } else {
       setIsWatchingAd(false);
       setPendingStart(false);
     }
-  }, [ad.isEarnedReward, startLevel3Game]);
+  }, [ad, ad.isEarnedReward, startLevel3Game]);
 
   useEffect(() => {
     if (!pendingStart) return;

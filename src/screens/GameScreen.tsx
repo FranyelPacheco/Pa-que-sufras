@@ -62,6 +62,20 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
 
   const rewardAd = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
 
+  useEffect(() => {
+    if (!rewardAd.error) return;
+    const err = rewardAd.error as Error & { code?: number };
+    console.warn(
+      `[AdMob] Error cargando rewarded interstitial (revancha): code=${err.code ?? 'N/A'} message=${err.message}`,
+    );
+  }, [rewardAd.error]);
+
+  useEffect(() => {
+    if (rewardAd.isLoaded) {
+      console.log('[AdMob] Rewarded interstitial de revancha listo');
+    }
+  }, [rewardAd.isLoaded]);
+
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseOpacity.value,
   }));
@@ -204,7 +218,8 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     setRevanchaPending(false);
     setShowPodium(false);
     doRevancha();
-  }, [revanchaPending, rewardAd.isClosed, doRevancha]);
+    rewardAd.load();
+  }, [revanchaPending, rewardAd.isClosed, doRevancha, rewardAd]);
 
   const handleMenuFromPodium = useCallback(() => {
     if (fakeAdTimerRef.current) {

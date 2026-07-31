@@ -24,6 +24,7 @@
 | Iconos | @expo/vector-icons | latest |
 | Audio | expo-audio | latest |
 | Gradientes | expo-linear-gradient | ~56.0.4 |
+| Splash nativo | expo-splash-screen | ~56.0.x |
 | Safe area | react-native-safe-area-context | ~5.7.0 |
 | Status bar | expo-status-bar | ~56.0.4 |
 | Testing | jest | ~29.7.0 |
@@ -92,6 +93,7 @@ src/
 - [x] Fase 5: Testing y corrección de bugs.
 - [x] Fase 5.1: UI/UX improvements — WelcomeScreen con logo + personajes, BannerAd condicional, MAX_PLAYERS=20, DynamicBackground rediseñado.
 - [x] Fase 5.2: Sistema de turnos justos (shuffle-bag) + Terminar Partida + Podio Top 3 con empates y confeti/condones + rewarded ad en revancha.
+- [x] Fase 5.3: Branding completo — splash nativo configurado (expo-splash-screen), adaptive icon oscuro, assets propios del usuario.
 - [ ] Fase 6: Build de producción con EAS (Android APK).
 - [ ] Fase 6.1: Publicación en Google Play Store.
 
@@ -184,6 +186,26 @@ src/
 - [ ] Publicación en Google Play Store
 - [ ] Reemplazar placeholders de música con pistas reales (Pixabay, Freesound)
 - [ ] Más preguntas (meta: 150+ por nivel)
+
+### Branding y assets (completado ✅)
+- **Splash nativo**: `expo-splash-screen` instalado y configurado en `app.json` (fondo `#0A0A0A`, `splash-icon.png`, `imageWidth: 200`). Antes usaba el splash por defecto de Expo.
+- **Adaptive icon**: `backgroundColor` cambiado de `#E6F4FE` (plantilla) → `#0A0A0A`; `userInterfaceStyle` → `"dark"`.
+- Assets propios del usuario (reemplazados):
+  - `android-icon-foreground.png` 1024×1024 ✅
+  - `android-icon-background.png` 1024×1024 ✅
+  - `android-icon-monochrome.png` 1024×1024 ✅
+  - `splash-icon.png` 512×512 ⚠️ funciona, recomendado 1024×1024
+  - `icon.png` 1024×1024 ✅
+- `favicon.png` solo aplica a web → no se usa en Android.
+
+### AdMob — Rewarded interstitial no carga (diagnóstico) 🔎
+- **Causa (confirmada por consola de AdMob):** la cuenta está en **límites de servicio** porque la app no está publicada en una tienda admitida + la cuenta no está verificada (faltan datos de pago).
+- El **banner** sí carga (tiene más "fill" y es menos restrictivo), pero el **rewarded interstitial** (formato pantalla completa/recompensa) queda bloqueado por los límites.
+- **Solución:** (1) AdMob → agregar datos de pago → verificar cuenta; (2) publicar la app en Google Play; (3) AdMob revisa la app → se quitan los límites → el rewarded cargará normal.
+- **Código mejorado mientras tanto:**
+  - `LevelSelectionScreen`: **precarga** el rewarded apenas se inicializa el SDK + **auto-recarga** al cerrar el anuncio.
+  - `GameScreen`: auto-recarga el rewarded tras la revancha.
+  - **Logging de errores** (`console.warn` con `code` + `message` del AdMob) en ambas pantallas para confirmar el error real en consola.
 
 ### Ideas guardadas 💡
 - **Contador de ronda/turno visible** ("Ronda 2 de 5") — por ahora las rondas son internas, el juego es libre hasta que decidan terminar; no hay rondas fijas. Idea guardada para futuro.
