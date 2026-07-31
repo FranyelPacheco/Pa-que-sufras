@@ -3,7 +3,7 @@
 ## 1. Estado Actual del MVP
 - **Nombre:** Pa' que sufras
 - **Stack:** React Native (Expo SDK 56) + TypeScript + React 19
-- **Estado:** MVP completo + UI refinada (WelcomeScreen con logo + personajes animados, DynamicBackground con gradientes/iconos flotantes, BannerAd oculto en nivel 3, MAX_PLAYERS=20). Listo para build nativa EAS.
+- **Estado:** MVP completo + turnos justos (shuffle-bag) + Podio Top 3 con empates y confeti/condones + rewarded ad en revancha. Listo para build nativa EAS.
 
 ## 2. Stack Tecnológico Completo
 
@@ -62,6 +62,7 @@ src/
   components/
     SplashScreen.tsx
     DynamicBackground.tsx
+    Podium.tsx                    ← Podio Top 3 + empates + confeti/condones 🏆
     ui/
       Button.tsx                 ← 3 variantes
       Card.tsx                   ← Variante glass
@@ -75,7 +76,7 @@ src/
     WelcomeScreen.tsx
     PlayerSetupScreen.tsx        ← ✕ rojo dedicado por jugador
     LevelSelectionScreen.tsx
-    GameScreen.tsx               ← Timer 60s + Respondió bien/mal + avance manual
+    GameScreen.tsx               ← Timer 60s + bien/mal + shuffle-bag + Terminar Partida + podio
 ```
 
 ## 4. Mapa de Ruta & Estado
@@ -90,6 +91,7 @@ src/
 - [x] Fase 4.4: Música ambiental por nivel (expo-audio).
 - [x] Fase 5: Testing y corrección de bugs.
 - [x] Fase 5.1: UI/UX improvements — WelcomeScreen con logo + personajes, BannerAd condicional, MAX_PLAYERS=20, DynamicBackground rediseñado.
+- [x] Fase 5.2: Sistema de turnos justos (shuffle-bag) + Terminar Partida + Podio Top 3 con empates y confeti/condones + rewarded ad en revancha.
 - [ ] Fase 6: Build de producción con EAS (Android APK).
 - [ ] Fase 6.1: Publicación en Google Play Store.
 
@@ -135,6 +137,7 @@ src/
 - Taglines rotativos cada 5s
 - Orbes de ambiente con colores de nivel 1
 - Entradas escalonadas con `FadeInDown`/`FadeInUp`
+- **Nota:** los personajes del inicio se **quitaron** (parecía que se podían escoger). Queda: logo → título → tagline → ENTRAR.
 
 ### DynamicBackground rediseñado 🌈
 - Gradientes por nivel:
@@ -150,11 +153,41 @@ src/
 ### MAX_PLAYERS = 20
 - Aumentado de 10 a 20 en `GameContext.tsx` y `PlayerSetupScreen.tsx`
 
+### Fix GenderSelector
+- Antes: `borderRightWidth: 0` en el botón izquierdo impedía ver el borde rojo activo en el lado derecho
+- Ahora: `marginRight: -1` superpone bordes + `zIndex: 2` en el activo → borde rojo completo
+
+### Sistema de turnos justos (shuffle-bag) 🔀
+- Nueva utilidad `shuffleArray` en `src/utils/game.ts`
+- Cola de jugadores barajada (`playerQueueRef`) en GameScreen
+- Cada turno: se toma el primer jugador elegible de la cola y se elimina
+- Al vaciarse la cola, se vuelve a cargar con todos los jugadores barajados
+- Garantiza que todos jueguen 1 vez por ciclo antes de repetirse
+- El filtro por género (`genderTarget`) solo salta a in-elegibles, que quedan para el siguiente turno
+- Fallback: si ningún elegible queda en la cola, se elige aleatorio y se re-baraja el resto
+
+### Terminar Partida + Podio Top 3 🏆
+- Botón ghost **"Terminar Partida"** abajo, cerca de las respuestas (visible con turno activo)
+- Modal de confirmación → registra la sesión → abre el podio
+- **Podio estilo olimpiadas** (`src/components/Podium.tsx`):
+  - 1º centro (dorado, alto) / 2º izquierda (plata) / 3º derecha (bronce)
+  - Personaje de cuerpo completo encima de cada podio (perro si es H, zorra si es M) con flotación
+  - Nombre y puntos sobre el podio; medalla 👑/🥈
+- **Empates:** si 2 o 3 empatan en primer lugar, TODOS quedan en oro al mismo nivel y los demás van debajo
+- **Confetti 🎉** al abrir el podio en niveles 1 y 2; en nivel 3 **lanzan condones** 🥵
+- **Revancha** → carga el **rewarded interstitial** (anuncio corto): si está listo se muestra, si no → fake-ad de 2s. Al cerrar/verlo reinicia el juego (mismo nivel + jugadores, resetea puntos/preguntas/cola)
+- **Menú principal** → `quitGame()` → vuelve a la selección de niveles
+- Pre-carga del rewarded ad: `ad.load()` al abrir el podio
+
 ## 7. Pendiente / Futuro
 - [ ] Build de producción con EAS (Android APK)
 - [ ] Publicación en Google Play Store
 - [ ] Reemplazar placeholders de música con pistas reales (Pixabay, Freesound)
 - [ ] Más preguntas (meta: 150+ por nivel)
+
+### Ideas guardadas 💡
+- **Contador de ronda/turno visible** ("Ronda 2 de 5") — por ahora las rondas son internas, el juego es libre hasta que decidan terminar; no hay rondas fijas. Idea guardada para futuro.
+- **Modo equipos** (parejas vs solteros) — tentador, guardado como posible feature.
 
 ## 8. Música — Dónde conseguir pistas libres
 Las pistas actuales en `assets/music/` son silencio. Para activar la música:

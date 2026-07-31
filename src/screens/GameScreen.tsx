@@ -1,7 +1,7 @@
 import { NavigationBar } from 'expo-navigation-bar';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 
 import { colors } from '../theme/colors';
 import { borderRadius, spacing } from '../theme/spacing';
@@ -23,8 +23,9 @@ import Avatar from '../components/ui/Avatar';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import QuestionTimer from '../components/ui/QuestionTimer';
+import Podium from '../components/Podium';
 import { useGame } from '../context/GameContext';
-import { getAssignableQuestions, pickRandomItem, getPlayersForGenderTarget } from '../utils/game';
+import { getAssignableQuestions, pickRandomItem, getPlayersForGenderTarget, shuffleArray } from '../utils/game';
 import { AD_UNIT_IDS } from '../ads/adUnits';
 import type { Player, Question } from '../types/game';
 
@@ -42,16 +43,24 @@ type AnswerState = 'idle' | 'correct' | 'incorrect';
 const DECK_RESET_MESSAGE = '¡Se terminaron las preguntas! Reiniciando mazo...';
 
 const GameScreen = ({ onQuit }: GameScreenProps) => {
-  const { players, currentLevel, scores, awardPoint, isMuted, toggleMute, quitGame, recordGameSession } = useGame();
+  const { players, currentLevel, scores, awardPoint, isMuted, toggleMute, quitGame, startGame, recordGameSession } = useGame();
   const [turn, setTurn] = useState<TurnState | null>(null);
   const [answerState, setAnswerState] = useState<AnswerState>('idle');
   const [questionCount, setQuestionCount] = useState(0);
   const [usedQuestionIds, setUsedQuestionIds] = useState<string[]>([]);
   const [deckResetNotice, setDeckResetNotice] = useState<string | null>(null);
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [showPodium, setShowPodium] = useState(false);
+  const [isWatchingFakeAd, setIsWatchingFakeAd] = useState(false);
+  const [revanchaPending, setRevanchaPending] = useState(false);
   const [turnKey, setTurnKey] = useState(0);
   const pulseOpacity = useSharedValue(1);
   const questionCountRef = useRef(0);
+  const playerQueueRef = useRef<string[]>([]);
+  const fakeAdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const rewardAd = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseOpacity.value,
@@ -104,6 +113,31 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     return () => clearTimeout(timeout);
   }, [deckResetNotice]);
 
+  const pickPlayerForQuestion = useCallback(
+    (eligiblePlayers: Player[]): Player | null => {
+      if (eligiblePlayers.length === 0) return null;
+
+      if (playerQueueRef.current.length === 0) {
+        playerQueueRef.current = shuffleArray(players.map((p) => p.id));
+      }
+
+      const eligibleIds = new Set(eligiblePlayers.map((p) => p.id));
+      const queueIndex = playerQueueRef.current.findIndex((id) => eligibleIds.has(id));
+
+      if (queueIndex !== -1) {
+        const [chosenId] = playerQueueRef.current.splice(queueIndex, 1);
+        return eligiblePlayers.find((p) => p.id === chosenId) ?? null;
+      }
+
+      const fallback = pickRandomItem(eligiblePlayers);
+      if (fallback) {
+        playerQueueRef.current = playerQueueRef.current.filter((id) => id !== fallback.id);
+      }
+      return fallback;
+    },
+    [players],
+  );
+
   const handleNextQuestion = useCallback(() => {
     setAnswerState('idle');
 
@@ -123,7 +157,7 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     if (!question) return;
 
     const eligiblePlayers = getPlayersForGenderTarget(players, question.genderTarget);
-    const player = pickRandomItem(eligiblePlayers);
+    const player = pickPlayerForQuestion(eligiblePlayers);
     if (!player) return;
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -137,7 +171,71 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
       questionCountRef.current = next;
       return next;
     });
-  }, [currentLevel, players, usedQuestionIds, triggerPulse]);
+  }, [currentLevel, players, usedQuestionIds, triggerPulse, pickPlayerForQuestion]);
+
+  const doRevancha = useCallback(() => {
+    startGame(currentLevel);
+    setTurn(null);
+    setAnswerState('idle');
+    setQuestionCount(0);
+    questionCountRef.current = 0;
+    setUsedQuestionIds([]);
+    playerQueueRef.current = [];
+    setTurnKey((prev) => prev + 1);
+  }, [currentLevel, startGame]);
+
+  const handleRevancha = useCallback(() => {
+    if (rewardAd.isLoaded) {
+      setRevanchaPending(true);
+      rewardAd.show();
+      return;
+    }
+
+    setIsWatchingFakeAd(true);
+    fakeAdTimerRef.current = setTimeout(() => {
+      setIsWatchingFakeAd(false);
+      setShowPodium(false);
+      doRevancha();
+    }, 2000);
+  }, [rewardAd, doRevancha]);
+
+  useEffect(() => {
+    if (!revanchaPending || !rewardAd.isClosed) return;
+    setRevanchaPending(false);
+    setShowPodium(false);
+    doRevancha();
+  }, [revanchaPending, rewardAd.isClosed, doRevancha]);
+
+  const handleMenuFromPodium = useCallback(() => {
+    if (fakeAdTimerRef.current) {
+      clearTimeout(fakeAdTimerRef.current);
+      fakeAdTimerRef.current = null;
+    }
+    setShowPodium(false);
+    setRevanchaPending(false);
+
+    if (Platform.OS === 'android') {
+      NavigationBar.setHidden(false);
+    }
+
+    quitGame();
+  }, [quitGame]);
+
+  const handleOpenPodium = useCallback(() => {
+    setShowEndConfirm(false);
+    recordGameSession(questionCountRef.current);
+    rewardAd.load();
+    setShowPodium(true);
+  }, [recordGameSession, rewardAd]);
+
+  useEffect(
+    () => () => {
+      if (fakeAdTimerRef.current) {
+        clearTimeout(fakeAdTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const handleCorrect = useCallback(() => {
     if (!turn) return;
@@ -315,6 +413,15 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
           />
         )}
 
+        {turn && (
+          <Button
+            label="Terminar Partida"
+            variant="ghost"
+            onPress={() => setShowEndConfirm(true)}
+            style={styles.endGameBtn}
+          />
+        )}
+
         {currentLevel !== 3 && (
           <BannerAd
             unitId={AD_UNIT_IDS.banner}
@@ -352,6 +459,63 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
                   style={styles.modalButton}
                 />
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showEndConfirm}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowEndConfirm(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <MaterialCommunityIcons
+                name="trophy"
+                size={40}
+                color={colors.accent}
+              />
+              <Text style={styles.modalTitle}>¿Terminar la partida?</Text>
+              <Text style={styles.modalSubtitle}>
+                Se mostrará el podio con los mejores
+              </Text>
+              <View style={styles.modalButtons}>
+                <Button
+                  label="Cancelar"
+                  variant="ghost"
+                  onPress={() => setShowEndConfirm(false)}
+                  style={styles.modalButton}
+                />
+                <Button
+                  label="Terminar"
+                  onPress={handleOpenPodium}
+                  style={styles.modalButton}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Podium
+          visible={showPodium}
+          players={players}
+          scores={scores}
+          currentLevel={currentLevel}
+          onRevancha={handleRevancha}
+          onMenu={handleMenuFromPodium}
+        />
+
+        <Modal
+          visible={isWatchingFakeAd}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {}}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={styles.modalSubtitle}>Cargando anuncio corto...</Text>
             </View>
           </View>
         </Modal>
@@ -581,5 +745,8 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  endGameBtn: {
+    marginTop: spacing.sm,
   },
 });

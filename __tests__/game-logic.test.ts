@@ -1,5 +1,5 @@
 import { QUESTIONS } from '../src/constants/questions';
-import { getAssignableQuestions, pickRandomItem } from '../src/utils/game';
+import { getAssignableQuestions, pickRandomItem, shuffleArray } from '../src/utils/game';
 import type { Player } from '../src/types/game';
 
 describe('Questions bank', () => {
@@ -102,5 +102,45 @@ describe('pickRandomItem', () => {
     const items = [1, 2, 3, 4, 5];
     const result = pickRandomItem(items);
     expect(items).toContain(result);
+  });
+});
+
+describe('shuffleArray', () => {
+  it('should return an array with the same elements', () => {
+    const input = [1, 2, 3, 4, 5, 6];
+    const output = shuffleArray(input);
+    expect(output.length).toBe(input.length);
+    expect([...output].sort()).toEqual([...input].sort());
+  });
+
+  it('should not mutate the original array', () => {
+    const input = [1, 2, 3, 4, 5];
+    const original = [...input];
+    shuffleArray(input);
+    expect(input).toEqual(original);
+  });
+
+  it('should handle empty and single-element arrays', () => {
+    expect(shuffleArray([])).toEqual([]);
+    expect(shuffleArray([42])).toEqual([42]);
+  });
+});
+
+describe('Shuffle-bag turn fairness', () => {
+  it('should give every player exactly one turn per full cycle', () => {
+    const ids = ['a', 'b', 'c', 'd'];
+    const queue: string[] = shuffleArray(ids);
+    const turns: string[] = [];
+    const cycle = [...queue];
+
+    while (queue.length > 0) {
+      const next = queue.pop();
+      if (next) turns.push(next);
+    }
+
+    expect(turns.length).toBe(ids.length);
+    expect([...turns].sort()).toEqual([...ids].sort());
+    expect(new Set(turns).size).toBe(ids.length);
+    expect([...cycle].sort()).toEqual([...ids].sort());
   });
 });

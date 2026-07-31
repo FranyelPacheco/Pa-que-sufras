@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
   },
   buttonLeft: {
     borderBottomLeftRadius: borderRadius.md,
-    borderRightWidth: 0,
     borderTopLeftRadius: borderRadius.md,
+    marginRight: -1,
   },
   buttonRight: {
     borderBottomRightRadius: borderRadius.md,
@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
   buttonActive: {
     backgroundColor: colors.accentDim,
     borderColor: colors.accent,
+    zIndex: 2,
   },
   disabled: {
     opacity: 0.5,

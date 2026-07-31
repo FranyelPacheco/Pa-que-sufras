@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  Easing,
   FadeInDown,
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
@@ -32,17 +30,10 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
 
   const orb1 = useSharedValue(0);
   const orb2 = useSharedValue(0);
-  const dogFloat = useSharedValue(0);
-  const foxFloat = useSharedValue(0);
 
   useEffect(() => {
     orb1.value = withRepeat(withTiming(1, { duration: 4000 }), -1, true);
     orb2.value = withRepeat(withTiming(1, { duration: 5000 }), -1, true);
-    dogFloat.value = withRepeat(withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }), -1, true);
-    foxFloat.value = withDelay(
-      500,
-      withRepeat(withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.sin) }), -1, true),
-    );
 
     const interval = setInterval(() => {
       setTaglineIndex((prev) => (prev + 1) % TAGLINES.length);
@@ -67,14 +58,6 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
     ],
   }));
 
-  const dogStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (dogFloat.value - 0.5) * 16 }],
-  }));
-
-  const foxStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (foxFloat.value - 0.5) * 16 }],
-  }));
-
   return (
     <View style={styles.root}>
       <View style={styles.ambienceLayer}>
@@ -83,11 +66,11 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
       </View>
 
       <View style={styles.screen}>
-        <Animated.View entering={FadeInDown.duration(600).springify().delay(200)} style={styles.logoSection}>
-          <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-        </Animated.View>
-
         <View style={styles.centerBlock}>
+          <Animated.View entering={FadeInDown.duration(600).springify().delay(200)} style={styles.logoWrap}>
+            <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+          </Animated.View>
+
           <Animated.Text
             entering={FadeInDown.duration(600).springify().delay(400)}
             style={styles.title}
@@ -104,19 +87,8 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           </Animated.Text>
         </View>
 
-        <Animated.View entering={FadeInDown.duration(600).springify().delay(800)} style={styles.charactersRow}>
-          <Animated.View style={[styles.charBox, dogStyle]}>
-            <Image source={require('../../assets/bodies/perro_cuerpo_completo2.png')} style={styles.charImg} resizeMode="contain" />
-            <Text style={styles.charLabel}>Perro</Text>
-          </Animated.View>
-          <Animated.View style={[styles.charBox, foxStyle]}>
-            <Image source={require('../../assets/bodies/zorra_cuerpo_completo2.png')} style={styles.charImg} resizeMode="contain" />
-            <Text style={styles.charLabel}>Zorra</Text>
-          </Animated.View>
-        </Animated.View>
-
         <Animated.View
-          entering={FadeInUp.duration(500).springify().delay(1000)}
+          entering={FadeInUp.duration(500).springify().delay(800)}
         >
           <Button label="ENTRAR" onPress={onStart} />
         </Animated.View>
@@ -158,28 +130,31 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-between',
     paddingHorizontal: 28,
-    paddingVertical: 40,
+    paddingVertical: 64,
     zIndex: 1,
-  },
-  logoSection: {
-    alignItems: 'center',
-  },
-  logo: {
-    height: 100,
-    width: 120,
   },
   centerBlock: {
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  logoWrap: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  logo: {
+    height: 110,
+    width: 130,
   },
   title: {
     color: colors.text,
     fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 44,
+    fontSize: 48,
     letterSpacing: letterSpacings.widest,
-    lineHeight: 52,
-    marginBottom: spacing.md,
+    lineHeight: 56,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   tagline: {
@@ -189,28 +164,5 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacings.wider,
     lineHeight: 22,
     textAlign: 'center',
-  },
-  charactersRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    paddingHorizontal: spacing.sm,
-  },
-  charBox: {
-    alignItems: 'center',
-    flex: 1,
-    maxWidth: '45%',
-  },
-  charImg: {
-    height: 180,
-    width: '100%',
-  },
-  charLabel: {
-    color: colors.textDim,
-    fontSize: fontSizes.sm,
-    letterSpacing: letterSpacings.widest,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-    textTransform: 'uppercase',
   },
 });
