@@ -1,4 +1,5 @@
 import { QUESTIONS } from '../src/constants/questions';
+import { CHALLENGES } from '../src/constants/challenges';
 import { getAssignableQuestions, pickRandomItem, shuffleArray } from '../src/utils/game';
 import type { Player } from '../src/types/game';
 
@@ -28,6 +29,23 @@ describe('Questions bank', () => {
   it('should have valid level values', () => {
     QUESTIONS.forEach((q) => {
       expect([1, 2, 3]).toContain(q.level);
+    });
+  });
+});
+
+describe('Challenges bank', () => {
+  it('should have at least 20 challenges per level', () => {
+    expect(CHALLENGES[1].length).toBeGreaterThanOrEqual(20);
+    expect(CHALLENGES[2].length).toBeGreaterThanOrEqual(20);
+    expect(CHALLENGES[3].length).toBeGreaterThanOrEqual(20);
+  });
+
+  it('should contain non-empty strings', () => {
+    [1, 2, 3].forEach((lvl) => {
+      CHALLENGES[lvl as 1 | 2 | 3].forEach((ch) => {
+        expect(typeof ch).toBe('string');
+        expect(ch.trim().length).toBeGreaterThan(5);
+      });
     });
   });
 });

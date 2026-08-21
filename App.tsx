@@ -7,6 +7,9 @@ import Animated, {
   FadeOut,
   SlideInRight,
   SlideOutLeft,
+  SlideInLeft,
+  SlideOutRight,
+  Easing,
 } from 'react-native-reanimated';
 import {
   PlayfairDisplay_400Regular,
@@ -76,13 +79,13 @@ const AppContent = () => {
 
   const entering =
     direction.current === 'forward'
-      ? SlideInRight.duration(300).springify()
-      : FadeIn.duration(200);
+      ? SlideInRight.duration(320).easing(Easing.bezier(0.25, 0.1, 0.25, 1))
+      : SlideInLeft.duration(320).easing(Easing.bezier(0.25, 0.1, 0.25, 1));
 
   const exiting =
     direction.current === 'forward'
-      ? SlideOutLeft.duration(200)
-      : FadeOut.duration(150);
+      ? SlideOutLeft.duration(240).easing(Easing.bezier(0.25, 0.1, 0.25, 1))
+      : SlideOutRight.duration(240).easing(Easing.bezier(0.25, 0.1, 0.25, 1));
 
   return (
     <View style={styles.container}>

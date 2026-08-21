@@ -27,6 +27,7 @@ import Podium from '../components/Podium';
 import { useGame } from '../context/GameContext';
 import { getAssignableQuestions, pickRandomItem, getPlayersForGenderTarget, shuffleArray } from '../utils/game';
 import { AD_UNIT_IDS } from '../ads/adUnits';
+import { CHALLENGES } from '../constants/challenges';
 import type { Player, Question } from '../types/game';
 
 type GameScreenProps = {
@@ -55,6 +56,10 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   const [isWatchingFakeAd, setIsWatchingFakeAd] = useState(false);
   const [revanchaPending, setRevanchaPending] = useState(false);
   const [turnKey, setTurnKey] = useState(0);
+  // Modo Retos: contador de fallos por jugador (id → streak)
+  const [failStreaks, setFailStreaks] = useState<Record<string, number>>({});
+  const [currentChallenge, setCurrentChallenge] = useState<string | null>(null);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
   const pulseOpacity = useSharedValue(1);
   const questionCountRef = useRef(0);
   const playerQueueRef = useRef<string[]>([]);
@@ -194,6 +199,7 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     setQuestionCount(0);
     questionCountRef.current = 0;
     setUsedQuestionIds([]);
+    setFailStreaks({});
     playerQueueRef.current = [];
     setTurnKey((prev) => prev + 1);
   }, [currentLevel, startGame]);
@@ -256,12 +262,35 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     if (!turn) return;
     setAnswerState('correct');
     awardPoint(turn.player.id);
+    // Respuesta correcta: resetear streak de este jugador
+    setFailStreaks((prev) => ({ ...prev, [turn.player.id]: 0 }));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [turn, awardPoint]);
 
   const handleIncorrect = useCallback(() => {
+    if (!turn) return;
     setAnswerState('incorrect');
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+    const playerId = turn.player.id;
+    const prevStreak = failStreaks[playerId] ?? 0;
+    const newStreak = prevStreak + 1;
+
+    if (newStreak >= 3) {
+      // Streak llegó a 3: mostrar reto y resetear contador
+      setFailStreaks((prev) => ({ ...prev, [playerId]: 0 }));
+      const pool = CHALLENGES[currentLevel];
+      const challenge = pickRandomItem(pool);
+      setCurrentChallenge(challenge);
+      setShowChallengeModal(true);
+    } else {
+      setFailStreaks((prev) => ({ ...prev, [playerId]: newStreak }));
+    }
+  }, [turn, failStreaks, currentLevel]);
+
+  const handleChallengeCompleted = useCallback(() => {
+    setShowChallengeModal(false);
+    setCurrentChallenge(null);
   }, []);
 
   const genderLabel = turn?.player.gender === 'H' ? 'Hombre' : 'Mujer';
@@ -430,7 +459,7 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
 
         {turn && (
           <Button
-            label="Terminar Partida"
+            label="Mostrar Ganador/es"
             variant="ghost"
             onPress={() => setShowEndConfirm(true)}
             style={styles.endGameBtn}
@@ -438,10 +467,12 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
         )}
 
         {currentLevel !== 3 && (
-          <BannerAd
-            unitId={AD_UNIT_IDS.banner}
-            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          />
+          <View style={styles.bannerContainer}>
+            <BannerAd
+              unitId={AD_UNIT_IDS.banner}
+              size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+            />
+          </View>
         )}
 
         <Modal
@@ -491,9 +522,9 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
                 size={40}
                 color={colors.accent}
               />
-              <Text style={styles.modalTitle}>¿Terminar la partida?</Text>
+              <Text style={styles.modalTitle}>¿Mostrar Ganador/es?</Text>
               <Text style={styles.modalSubtitle}>
-                Se mostrará el podio con los mejores
+                Se revelará el podio con los mejores jugadores
               </Text>
               <View style={styles.modalButtons}>
                 <Button
@@ -503,11 +534,46 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
                   style={styles.modalButton}
                 />
                 <Button
-                  label="Terminar"
+                  label="Ver Ganador/es"
                   onPress={handleOpenPodium}
                   style={styles.modalButton}
                 />
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de Modo Reto por 3 fallos acumulados */}
+        <Modal
+          visible={showChallengeModal}
+          transparent
+          animationType="fade"
+          onRequestClose={handleChallengeCompleted}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, styles.challengeContent]}>
+              <View style={styles.challengeIconBadge}>
+                <MaterialCommunityIcons
+                  name="fire"
+                  size={36}
+                  color={colors.accent}
+                />
+              </View>
+              <Text style={styles.challengeBadgeText}>¡3 FALLOS ACUMULADOS!</Text>
+              <Text style={styles.challengeTitle}>¡MODO RETO ACTIVADO!</Text>
+              <Text style={styles.challengePlayerText}>
+                {turn?.player.name} debe cumplir este castigo:
+              </Text>
+              <Card variant="glass" style={styles.challengeCard}>
+                <Text style={styles.challengeText}>
+                  {currentChallenge}
+                </Text>
+              </Card>
+              <Button
+                label="¡Reto Cumplido!"
+                onPress={handleChallengeCompleted}
+                style={styles.challengeButton}
+              />
             </View>
           </View>
         </Modal>
@@ -763,5 +829,63 @@ const styles = StyleSheet.create({
   },
   endGameBtn: {
     marginTop: spacing.sm,
+  },
+  bannerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    overflow: 'hidden',
+  },
+  challengeContent: {
+    borderColor: 'rgba(255, 46, 99, 0.4)',
+    borderWidth: 1.5,
+    maxWidth: 340,
+    backgroundColor: '#160B0E',
+  },
+  challengeIconBadge: {
+    backgroundColor: colors.accentDim,
+    borderColor: colors.accent,
+    borderWidth: 1.5,
+    borderRadius: borderRadius.full,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  challengeBadgeText: {
+    color: colors.accent,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    letterSpacing: letterSpacings.wider,
+    textTransform: 'uppercase',
+  },
+  challengeTitle: {
+    color: colors.text,
+    fontSize: fontSizes['2xl'],
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
+  challengePlayerText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.medium,
+    textAlign: 'center',
+  },
+  challengeCard: {
+    backgroundColor: 'rgba(255, 46, 99, 0.08)',
+    borderColor: 'rgba(255, 46, 99, 0.25)',
+    borderWidth: 1,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    width: '100%',
+  },
+  challengeText: {
+    color: colors.text,
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.semibold,
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  challengeButton: {
+    width: '100%',
+    marginTop: spacing.xs,
   },
 });

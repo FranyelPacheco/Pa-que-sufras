@@ -181,18 +181,21 @@ src/
 - **Menú principal** → `quitGame()` → vuelve a la selección de niveles
 - Pre-carga del rewarded ad: `ad.load()` al abrir el podio
 
-### Rediseño y expansión del banco de preguntas (600 preguntas, 200 por nivel) 🎯
-- **Nuevas temáticas profundas y vulnerables:** Drogas, problemas familiares/con padres, depresión, soledad, inseguridades físicas y mentales, traumas de infancia, traiciones y confesiones anónimas estilo Reddit (r/confession, r/TrueOffMyChest).
-- **Nuevo enfoque acusatorio / abierto:** Eliminadas las preguntas cerradas de "Sí/No" o "¿Alguna vez has...?".
-- **Premisa asumida:** Se asume que el jugador ya lo hizo o vivió la situación y se le pide el detalle, nombre, motivo o anécdota sin escapatoria.
-- **Formato conciso y directo:** Frases cortas y contundentes optimizadas para visualización en pantalla móvil.
-- **Sin duplicados:** 200 preguntas únicas por nivel (600 en total).
-- Validación de Jest y TypeScript 100% aprobada.
+### Modo Retos por 3 Fallos Acumulados + Mejoras UI 🎯🔥
+- **Modo Retos (`src/constants/challenges.ts`):**
+  - 60 retos únicos (20 por nivel) calibrados por intensidad.
+  - Contador individual por jugador (`failStreaks`): al acumular 3 no-respuestas/fallos, se dispara un modal de castigo con reto físico/social antes de poder continuar.
+  - Al superar el reto ("¡Reto Cumplido!"), el streak del jugador se reinicia a 0.
+- **Botón y Flujo de Fin de Partida:** Renombrado a **"Mostrar Ganador/es"** con confirmación clara.
+- **Fix Banner AdMob:** Envuelto en contenedor centrado `100% width` para corregir desalineación a la derecha.
+- **Transiciones fluidas (`App.tsx`):** Navegación con curvas bezier bidireccionales (`SlideInRight`/`SlideOutLeft` hacia adelante, `SlideInLeft`/`SlideOutRight` hacia atrás) eliminando saltos bruscos.
+- **Tests unitarios:** 19/19 tests pasando (preguntas, retos, asignación, shuffle, podio).
 
 ## 7. Pendiente / Futuro
 - [ ] Build de producción con EAS (Android APK)
 - [ ] Publicación en Google Play Store
-- [ ] Reemplazar placeholders de música con pistas reales (Pixabay, Freesound)
+- [ ] Reemplazar placeholders de música con pistas reales recomendadas de Pixabay
+- [x] Modo Retos por nivel implementado ✅
 - [x] Más preguntas (meta: 200 por nivel completada con 600 preguntas en total ✅)
 
 ### Branding y assets (completado ✅)
