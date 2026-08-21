@@ -181,11 +181,19 @@ src/
 - **Menú principal** → `quitGame()` → vuelve a la selección de niveles
 - Pre-carga del rewarded ad: `ad.load()` al abrir el podio
 
+### Rediseño y expansión del banco de preguntas (600 preguntas, 200 por nivel) 🎯
+- **Nuevas temáticas profundas y vulnerables:** Drogas, problemas familiares/con padres, depresión, soledad, inseguridades físicas y mentales, traumas de infancia, traiciones y confesiones anónimas estilo Reddit (r/confession, r/TrueOffMyChest).
+- **Nuevo enfoque acusatorio / abierto:** Eliminadas las preguntas cerradas de "Sí/No" o "¿Alguna vez has...?".
+- **Premisa asumida:** Se asume que el jugador ya lo hizo o vivió la situación y se le pide el detalle, nombre, motivo o anécdota sin escapatoria.
+- **Formato conciso y directo:** Frases cortas y contundentes optimizadas para visualización en pantalla móvil.
+- **Sin duplicados:** 200 preguntas únicas por nivel (600 en total).
+- Validación de Jest y TypeScript 100% aprobada.
+
 ## 7. Pendiente / Futuro
 - [ ] Build de producción con EAS (Android APK)
 - [ ] Publicación en Google Play Store
 - [ ] Reemplazar placeholders de música con pistas reales (Pixabay, Freesound)
-- [ ] Más preguntas (meta: 150+ por nivel)
+- [x] Más preguntas (meta: 200 por nivel completada con 600 preguntas en total ✅)
 
 ### Branding y assets (completado ✅)
 - **Splash nativo**: `expo-splash-screen` instalado y configurado en `app.json` (fondo `#0A0A0A`, `splash-icon.png`, `imageWidth: 200`). Antes usaba el splash por defecto de Expo.
