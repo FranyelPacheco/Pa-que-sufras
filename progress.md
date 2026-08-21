@@ -37,9 +37,9 @@ index.ts                         ← Entry point Expo
 babel.config.js                  ← Config Babel (reanimated plugin)
 assets/
   music/
-    level1.wav                   ← Música nivel 1 (placeholder silencioso)
-    level2.wav                   ← Música nivel 2 (placeholder silencioso)
-    level3.wav                   ← Música nivel 3 (placeholder silencioso)
+    level1.mp3                   ← Música nivel 1 (real)
+    level2.mp3                   ← Música nivel 2 (real)
+    level3.mp3                   ← Música nivel 3 (real)
 __tests__/
   game-logic.test.ts             ← 13 tests
 src/
@@ -222,15 +222,12 @@ src/
 - **Contador de ronda/turno visible** ("Ronda 2 de 5") — por ahora las rondas son internas, el juego es libre hasta que decidan terminar; no hay rondas fijas. Idea guardada para futuro.
 - **Modo equipos** (parejas vs solteros) — tentador, guardado como posible feature.
 
-## 8. Música — Dónde conseguir pistas libres
-Las pistas actuales en `assets/music/` son silencio. Para activar la música:
-1. Descargar MP3/WAV libres de derechos en:
-   - https://pixabay.com/music/ (sin atribución)
-   - https://freesound.org/ (buscar CC0)
-2. Renombrar a `level1.wav`, `level2.wav`, `level3.wav`
-3. Reemplazar los archivos en `assets/music/`
+## 8. Música — Estado ✅
+La música ya está **activa**: pistas MP3 reales en `assets/music/` (`level1.mp3` 2.7 MB · `level2.mp3` 3.8 MB · `level3.mp3` 5.1 MB). `src/constants/music.ts` apunta a los `.mp3` y `expo-audio` los reproduce nativamente.
 
-Sugerencias de estilo:
+⚠️ Si algún día reemplazas las pistas: verificar que sean **libres de derechos** (Pixabay sin atribución, Freesound CC0) y mantener los nombres `level1/2/3.mp3`.
+
+Estilos actuales sugeridos:
 - Nivel 1 (Conociéndonos): Chill, acústico, relajado
 - Nivel 2 (Juego previo): Smooth, misterioso, jazz
 - Nivel 3 (Se 😈): Electrónico, intenso, provocativo
