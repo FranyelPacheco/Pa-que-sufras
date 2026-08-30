@@ -1,7 +1,11 @@
 import type { Question } from '../types/game';
 
 export const QUESTIONS: Question[] = [
-  // ——— Nivel 1: Conociéndonos ———
+  // ==========================================
+  // ————— NIVEL 1: CONOCIÉNDONOS (250 Preguntas) —————
+  // ==========================================
+
+  // --- Anécdotas, Ridículos y Momentos "Trágame Tierra" ---
   { id: 'q-l1-01', text: '¿A quién del grupo le fingirías que te encantó un regalo horrible?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-02', text: '¿Cómo escapaste de la peor cita o salida que has tenido?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-03', text: '¿Qué canción es el soundtrack de tu peor decisión del último año?', level: 1, genderTarget: 'all' },
@@ -52,6 +56,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l1-48', text: '¿Qué frase o muletilla insoportable usas todo el tiempo?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-49', text: '¿Qué drama exagerado inventaste para faltar a la escuela o trabajo?', level: 1, genderTarget: 'H' },
   { id: 'q-l1-50', text: '¿Qué accidente con tu ropa o maquillaje te dejó en ridículo público?', level: 1, genderTarget: 'M' },
+
+  // --- Manías, Rarezas y Hábitos Inconfesables ---
   { id: 'q-l1-51', text: '¿Qué manía de convivencia no soportas de la gente?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-52', text: '¿A qué persona stalkeas casi a diario en redes sociales?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-53', text: '¿Cuál fue tu obsesión o fanatismo infantil más patético?', level: 1, genderTarget: 'all' },
@@ -102,6 +108,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l1-98', text: '¿Qué inventaste cuando te saludaron efusivamente y no sabías su nombre?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-99', text: '¿Qué tontería carísima compraste solo por emoción y nunca usaste?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-100', text: 'Si revisas 5 minutos el celular de alguien aquí presente, ¿a quién eliges?', level: 1, genderTarget: 'all' },
+
+  // --- Redes Sociales, Stalkeo y Vida Digital ---
   { id: 'q-l1-101', text: '¿A quién del grupo ya le revisaste el celular sin que se enterara?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-102', text: '¿Qué foto de perfil antigua te daría vergüenza mostrar hoy?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-103', text: '¿A quién stalkeaste tanto que ya conocías su rutina sin seguirlo?', level: 1, genderTarget: 'all' },
@@ -152,6 +160,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l1-148', text: '¿A cuál de tus contactos tienes guardado con nombre falso para disimular?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-149', text: '¿Qué excusa diste para no hacer el ejercicio que prometiste esta semana?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-150', text: '¿Qué alimento o snack escondes en casa para que no te lo acaben?', level: 1, genderTarget: 'all' },
+
+  // --- Amistades, Dinámicas Cotidianas y Secretos Leves ---
   { id: 'q-l1-151', text: '¿Qué canción que finges odiar tiene cientos de reproducciones en tu historial?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-152', text: '¿Cuándo te metiste a otro pasillo del super solo para evitar a alguien conocido?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-153', text: '¿Qué pequeño sabotaje hiciste en un juego o deporte para que otro perdiera?', level: 1, genderTarget: 'all' },
@@ -203,7 +213,65 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l1-199', text: '¿A quién del grupo elegirías si tuvieras que irte a vivir con alguien de aquí?', level: 1, genderTarget: 'all' },
   { id: 'q-l1-200', text: '¿A quién del grupo le confesarías algo hoy si no hubiera consecuencias?', level: 1, genderTarget: 'all' },
 
-  // ——— Nivel 2: Juego previo ———
+  // --- Conflictos Grupales, Señalamientos y "Quién de aquí..." ---
+  { id: 'q-l1-201', text: '¿A quién de aquí dejarías de hablarle primero si el grupo se peleara? Solo puedes escoger a uno.', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-202', text: '¿Quién de aquí te ha traicionado de alguna forma y cómo fue?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-203', text: '¿Cuál es el peor comentario que has dicho de alguien de este grupo a sus espaldas?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-204', text: '¿A quién del grupo le tienes menos confianza aunque lo trates bien en la cara?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-205', text: '¿Quién de aquí crees que habla mal de ti cuando no estás?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-206', text: '¿A quién del grupo le reprocharías algo que hizo pero nunca le dijiste a la cara?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-207', text: '¿Qué cosa que hace alguien de aquí te parece hipócrita pero finges que no te molesta?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-208', text: '¿A quién de este grupo invitarías menos a un viaje y por qué?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-209', text: '¿Quién crees que es el más falso del grupo y lo disimula perfecto?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-210', text: '¿Qué creencia religiosa o espiritual ajena te parece absurda pero nunca lo dices en voz alta?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-211', text: '¿Qué forma de vestir de alguien de aquí nunca te ha gustado y nunca se lo has dicho?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-212', text: '¿Qué estereotipo sobre tu propio género cumples aunque odias que te lo digan?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-213', text: '¿Qué opinión política tienes que sabes que va a molestar a alguien en esta sala?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-214', text: '¿Cuándo fingiste estar de acuerdo con algo políticamente solo para no generar conflicto?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-215', text: '¿Qué cosa nunca has perdonado aunque digas que ya lo superaste?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-216', text: '¿A quién de aquí le pedirías que cambiara algo de su personalidad si pudieras ser honesto?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-217', text: '¿Cuándo juzgaste a alguien por su apariencia antes de conocerlo y tenías razón?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-218', text: '¿Qué prejuicio sobre una clase social, raza o religión tienes aunque sabes que está mal?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-219', text: '¿Qué obsesión tuya empieza a preocuparte a ti mismo/a?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-220', text: '¿Cuándo fuiste cruel con alguien vulnerable y lo justificaste para quedar bien contigo mismo?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-221', text: '¿Qué cosa hace alguien de aquí que en el fondo envidias aunque nunca lo admitas?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-222', text: '¿A quién de los presentes nunca pedirías consejo y por qué?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-223', text: '¿Qué papel del grupo sientes que cumples aunque no te guste: el chistoso, el drama, el invisible...?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-224', text: '¿Cuándo actuaste con total falta de empatía y no te arrepentiste?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-225', text: '¿Qué rasgo antisocial tuyo la gente nota pero nadie menciona?', level: 1, genderTarget: 'all' },
+
+  // --- Hipocresía, Prejuicios y Dilemas Sociales ---
+  { id: 'q-l1-226', text: '¿Qué cosa de tu pasado te avergüenza tanto que cambiarías el tema si alguien lo sacara?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-227', text: '¿A quién del grupo le darías menos dinero prestado y por qué?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-228', text: '¿Qué trauma personal te hace actuar de formas que sabes que molestan a los demás?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-229', text: '¿A quién de aquí sientes que tratas mejor en público que en privado?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-230', text: '¿Cuándo viste una injusticia clara y te quedaste callado/a para no meterte en problemas?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-231', text: '¿Qué rareza o manía tuya la gente tolera pero en el fondo le molesta?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-232', text: '¿A quién del grupo le dirías algo incómodo si supieras que no habría consecuencias?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-233', text: '¿Qué defecto de alguien de aquí es evidente para todos menos para él o ella?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-234', text: '¿A quién de los presentes crees que le hace falta un golpe de realidad en su vida?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-235', text: '¿Cuál es el chisme más feo que has escuchado sobre alguien de este cuarto y a quién se lo contaste?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-236', text: '¿A quién de aquí consideras una mala influencia para el resto del grupo?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-237', text: '¿Quién de esta sala tiene el ego más inflado e injustificado?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-238', text: '¿Qué actitud de superioridad le has visto a alguien de aquí cuando habla de su trabajo o dinero?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-239', text: '¿A quién de este grupo le confiarías tus finanzas y a quién ni un solo dólar?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-240', text: '¿Qué es lo más hipócrita que has visto predicar a alguien de aquí en sus redes sociales?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-241', text: '¿Quién de nosotros crees que sería capaz de traicionar al grupo si le ofrecieran una ventaja personal?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-242', text: '¿A quién de aquí invitarías por pura lástima o compromiso a una reunión?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-243', text: '¿Qué mentira piadosa le has sostenido en la cara a alguien de esta sala durante meses?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-244', text: '¿Quién de los presentes crees que se hace la víctima más rápido cuando comete un error?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-245', text: '¿Qué defecto físico o de estilo de alguien de aquí cambiarías si tuvieras una varita mágica?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-246', text: '¿A quién de este grupo le cuesta más pedir perdón aunque sepa que la regó?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-247', text: '¿Quién crees que se cree más inteligente o culto de lo que realmente es en esta sala?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-248', text: '¿Qué conversación privada de WhatsApp borrarías en pánico si alguien de aquí te pidiera verla?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-249', text: '¿A quién de los presentes le tendrías menos paciencia si tuvieran que convivir un mes bajo el mismo techo?', level: 1, genderTarget: 'all' },
+  { id: 'q-l1-250', text: 'Si hoy tuvieras que eliminar permanentemente a uno de nosotros de tu vida, ¿a quién eliges sin dudar?', level: 1, genderTarget: 'all' },
+
+  // ==========================================
+  // ————— NIVEL 2: JUEGO PREVIO (250 Preguntas) —————
+  // ==========================================
+
+  // --- Exes, Despecho y Rupturas Amorosas ---
   { id: 'q-l2-01', text: '¿Qué ex te dio la mejor noche de tu vida y qué no ha podido superar tu pareja actual?', level: 2, genderTarget: 'M' },
   { id: 'q-l2-02', text: '¿Qué ex te volvía más loco en la cama y qué le falta a tu novia actual para igualarla?', level: 2, genderTarget: 'H' },
   { id: 'q-l2-03', text: '¿Qué fue lo más turbio que le descubriste a tu pareja al revisarle el celular?', level: 2, genderTarget: 'all' },
@@ -254,6 +322,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l2-48', text: '¿Qué gusto o morbo íntimo ocultas por miedo a que te juzguen?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-49', text: '¿A quién besaste borracho en una fiesta y ni recuerdas cómo se llamaba?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-50', text: '¿Qué fue lo más caliente que hiciste en una primera cita?', level: 2, genderTarget: 'all' },
+
+  // --- Citas, Primeros Encuentros y Calenturas ---
   { id: 'q-l2-51', text: '¿Qué le criticaste al ex de tu pareja actual para sentirte superior?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-52', text: '¿Qué drama o enfermedad inventaste para dar lástima a quien te gustaba?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-53', text: '¿Qué es lo que peor hace tu pareja o último ligue al besar?', level: 2, genderTarget: 'all' },
@@ -304,6 +374,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l2-98', text: '¿A quién dejaste plantado/a por irte con alguien más atractivo/a?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-99', text: '¿Qué detalle desagradable te mató el amor por completo hacia alguien?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-100', text: '¿A quién de los presentes te comerías a besos si no hubiera consecuencias?', level: 2, genderTarget: 'all' },
+
+  // --- Relaciones Tóxicas, Celos y Dependencia ---
   { id: 'q-l2-101', text: '¿Qué droga o sustancia probaste en una fiesta y terminaste teniendo un mal viaje espantoso?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-102', text: '¿Qué relación tóxica te destruyó psicológicamente y cuánto tardaste en salir de ahí?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-103', text: '¿A quién usaste como clavo para olvidar a tu ex sabiendo que le romperías el corazón?', level: 2, genderTarget: 'all' },
@@ -354,6 +426,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l2-148', text: '¿A qué persona nunca debiste haber besado y hoy te da asco recordar?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-149', text: '¿Qué secreto oscuro de tu vida amorosa enterraste para siempre para no ser juzgado/a?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-150', text: '¿A quién de los presentes lastimarías sin querer si se llegara a enamorar de ti?', level: 2, genderTarget: 'all' },
+
+  // --- Infidelidades, Engaños y Doble Vida ---
   { id: 'q-l2-151', text: '¿Qué borrachera violenta o fuera de control te costó una amistad de años?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-152', text: '¿Qué mentira piadosa sobre el sexo le dijiste a tu pareja para no herir su ego?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-153', text: '¿A quién utilizaste para poner celoso a tu ex en una fiesta donde estaban todos?', level: 2, genderTarget: 'all' },
@@ -405,7 +479,65 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l2-199', text: '¿Por qué te aferraste a alguien que desde el primer día te dejó claro que solo te quería para un rato?', level: 2, genderTarget: 'all' },
   { id: 'q-l2-200', text: '¿A cuál de las personas presentes aquí jamás dejarías que se acerque a tu pareja?', level: 2, genderTarget: 'all' },
 
-  // ——— Nivel 3: Se 😈 ———
+  // --- Roles de Género, Machismo/Misandria y Dobles Estándares ---
+  { id: 'q-l2-201', text: '¿Crees que los hombres tienen que pagar en las citas? Justifica sin pensarlo dos veces.', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-202', text: '¿Cuándo actuaste de forma machista o misándrica y te diste cuenta después?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-203', text: '¿Qué expectativa diferente tienes para hombres y mujeres en una relación que sabes que es injusta?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-204', text: '¿Si tu pareja gana más que tú, te afecta emocionalmente aunque digas que no?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-205', text: '¿Cuándo defendiste públicamente algo que en privado haces exactamente al contrario?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-206', text: '¿Qué dices que es inaceptable en una relación pero lo toleras cuando te enamoras?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-207', text: '¿Con cuántas personas serías infiel antes de considerarte infiel de verdad?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-208', text: '¿Qué pelea de pareja iniciaste sabiendo que estabas equivocado/a pero no cediste?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-209', text: '¿Cuándo usaste "es que soy así" como excusa para no cambiar algo que dañaba a tu pareja?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-210', text: '¿Qué religión o creencia espiritual te parece que hace daño real en las relaciones de pareja?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-211', text: '¿Cuándo usaste el llanto o el silencio como arma de manipulación emocional?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-212', text: '¿Qué patrón tóxico repites en todas tus relaciones que sabes de dónde viene?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-213', text: '¿Qué tan diferente tratas a alguien si es atractivo/a versus si no lo es?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-214', text: '¿Cuándo perdonaste una infidelidad en público pero en privado no superaste nada?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-215', text: '¿A quién del grupo crees que es más probable que engañe a su pareja y por qué?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-216', text: '¿Qué dilema moral real tuviste en una relación y tomaste la peor decisión posible?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-217', text: '¿Cuándo fuiste más leal con tu ex que con tu pareja actual?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-218', text: '¿Qué cosa que "nunca harías" ya hiciste en una relación y no lo cuentas?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-219', text: '¿Cuándo pusiste tus propias necesidades por encima de la salud mental de tu pareja y sabías lo que hacías?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-220', text: '¿Qué piensas en privado de la ex de tu pareja actual que nunca dirías en voz alta?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-221', text: '¿Cuándo saboteaste a propósito la relación de un amigo/a porque no te gustaba su pareja?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-222', text: '¿Qué opinión tienes sobre el aborto que sabes que va a incomodar a alguien aquí?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-223', text: '¿Cuándo le exigiste a tu pareja algo que tú mismo/a no eres capaz de cumplir?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-224', text: '¿Qué amistad de tu pareja crees que amenaza la relación aunque finjas que confías?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-225', text: '¿Cuándo gaslight a alguien en una relación haciéndole creer que estaba loco/a?', level: 2, genderTarget: 'all' },
+
+  // --- Dilemas Morales, Manipulación y Dinero en Pareja ---
+  { id: 'q-l2-226', text: '¿Qué tipo de cuerpo o raza "prefieres" en una pareja aunque nunca lo dices en voz alta?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-227', text: '¿Cuándo dejaste que alguien cayera emocionalmente solo/a para no tener que ser el/la malo/a de la historia?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-228', text: '¿Qué cosa que tu pareja considera infidelidad tú no la ves así y por qué?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-229', text: '¿Cuándo te aprovechaste de alguien que te quería más de lo que tú lo querías a él/ella?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-230', text: '¿Qué hábito o ideología de tu pareja te molesta profundamente pero no te atreves a decírselo?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-231', text: '¿En qué momento reconociste que eras el/la tóxico/a de esa relación?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-232', text: '¿Cuándo intentaste destruir la autoestima de alguien que te gustaba para que dependiera de ti?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-233', text: '¿Qué prejuicio sobre la forma de vestir de alguien te hizo asumir cosas sobre su vida sexual?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-234', text: '¿A quién de aquí crees que le va a ir peor en el amor y por qué?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-235', text: '¿Consideras que el pasado sexual de una persona importa para tomarla en serio en una relación? Defiéndelo.', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-236', text: '¿Qué límite entre amistad y coqueteo cruzas en secreto mientras le dices a tu pareja que exagera?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-237', text: '¿Cuándo usaste tu atractivo físico para conseguir un trato especial de alguien que sabías que quería contigo?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-238', text: '¿Qué opinas de revisar el celular de tu pareja a escondidas: precaución necesaria o toxicidad?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-239', text: '¿Qué secreto financiero le ocultas o le ocultaste a tu pareja por desconfianza?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-240', text: '¿Aceptarías que tu pareja tenga un/a mejor amigo/a con quien sale a solas de noche?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-241', text: '¿Qué papel machista o sumiso asumiste en una relación solo para evitar un conflicto?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-242', text: '¿Cuándo fue la última vez que coqueteaste descaradamente estando en una relación formal?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-243', text: '¿Qué doble estándar aplicas: qué le prohíbes o criticas a tu pareja que tú sí haces?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-244', text: '¿Estarías con alguien desempleado/a y sin ambición si en todo lo demás es la persona perfecta?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-245', text: '¿Cuándo le hiciste un desplante público a tu pareja para demostrar frialdad o control?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-246', text: '¿Qué pensamiento de desprecio o rechazo sentiste hacia tu pareja en medio de una discusión?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-247', text: '¿A quién de los presentes le pedirías un consejo para ocultar una infidelidad sabiendo que no te juzgaría?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-248', text: '¿Qué mentira sobre tu fidelidad te llevarás a la tumba sin que tu pareja sepa jamás?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-249', text: '¿Cuándo continuaste saliendo con alguien sabiendo que esa persona estaba destruyendo su salud mental por ti?', level: 2, genderTarget: 'all' },
+  { id: 'q-l2-250', text: 'Si tu pareja actual y tu ex más tóxico/a te pidieran volver el mismo día, ¿a quién elegirías en el fondo?', level: 2, genderTarget: 'all' },
+
+  // ==========================================
+  // ————— NIVEL 3: SE PONE PICANTE 😈 (250 Preguntas) —————
+  // ==========================================
+
+  // --- Fetiches, Tabús y Prácticas Íntimas ---
   { id: 'q-l3-01', text: '¿Qué sería peor: que tu mamá te pille masturbándote o pillarla a ella?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-02', text: '¿Qué pensamiento sexual o atracción has tenido hacia un familiar tuyo?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-03', text: 'Si nadie se entera, ¿qué le harías en la cama a la pareja de tu mejor amigo/a?', level: 3, genderTarget: 'all' },
@@ -456,6 +588,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l3-48', text: '¿Qué nota del 1 al 10 le das a tu mejor polvo y qué hizo tan especial?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-49', text: '¿Por qué te vestiste y te fuiste a mitad del acto con alguien que lo hacía pésimo?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-50', text: '¿Qué mentira inventaste para acostarte con una mujer en la primera noche?', level: 3, genderTarget: 'H' },
+
+  // --- Encuentros Salvajes, Tríos y Lugares Prohibidos ---
   { id: 'q-l3-51', text: '¿Qué compañero/a de trabajo o estudio te quita el sueño con fantasías eróticas?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-52', text: '¿A quién le mandaste una foto de tu pene sin que te la hubiera pedido?', level: 3, genderTarget: 'H' },
   { id: 'q-l3-53', text: '¿Qué disfraz o juego de roles te calienta más que cualquier otra cosa?', level: 3, genderTarget: 'all' },
@@ -506,6 +640,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l3-98', text: '¿Qué comida probaste en la cama (crema, hielo, miel) y qué tan pegajoso terminó todo?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-99', text: '¿En qué lugar saliste a la calle sin ropa interior sintiendo la adrenalina?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-100', text: 'Si tuvieras que tener sexo salvaje con alguien presente ahora mismo, ¿a quién eliges sin pensarlo?', level: 3, genderTarget: 'all' },
+
+  // --- Noches de Descontrol, Excesos y Sustancias ---
   { id: 'q-l3-101', text: '¿Qué es lo más oscuro o prohibido que has experimentado bajo los efectos de drogas?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-102', text: '¿Con qué persona prohibida de tu propia familia sentiste una tensión morbosa en un momento a solas?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-103', text: '¿Qué traición imperdonable le hiciste a una persona que confiaba ciegamente en ti?', level: 3, genderTarget: 'all' },
@@ -556,6 +692,8 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l3-148', text: '¿Qué confesión te llevarías a la tumba si no existiera este juego en este preciso instante?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-149', text: '¿A qué persona presente le harías la propuesta sexual más indecente y sucia si estuviéramos solos?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-150', text: 'Si tuvieras que salvar tu pellejo exponiendo el secreto más oscuro de alguien en esta sala, ¿el secreto de quién revelarías?', level: 3, genderTarget: 'all' },
+
+  // --- Secretos Inconfesables, Morbo y Traiciones Íntimas ---
   { id: 'q-l3-151', text: '¿Qué vicio oscuro o adicción secreta mantienes viva que destruiría la imagen que tienen de ti?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-152', text: '¿Con qué persona prohibida de tu entorno cercano tuviste un encuentro sexual que juraron ocultar?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-153', text: '¿Qué traición por dinero, estatus o placer cometiste contra alguien que te consideraba familia?', level: 3, genderTarget: 'all' },
@@ -606,4 +744,59 @@ export const QUESTIONS: Question[] = [
   { id: 'q-l3-198', text: '¿Qué secreto aterrador sobre ti te llevarás a la tumba si no lo confiesas en este juego?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-199', text: '¿A qué persona de este grupo llevarías a un motel ahora mismo si nadie pudiera enterarse jamás?', level: 3, genderTarget: 'all' },
   { id: 'q-l3-200', text: 'Si tuvieras que condenar a uno de los presentes a que todo su historial íntimo se haga público, ¿a quién elegirías?', level: 3, genderTarget: 'all' },
+
+  // --- Psicopatía, Frialdad, Venganzas y Daño Emocional ---
+  { id: 'q-l3-201', text: '¿A quién de aquí te gustaría destruir emocionalmente si supieras exactamente cómo hacerlo?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-202', text: '¿Qué trauma de tu infancia explica por qué eres tan difícil de querer?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-203', text: '¿Cuándo sentiste que lo correcto era hacerle daño a alguien y lo disfrutaste?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-204', text: '¿Qué tan psicópata puedes ser cuando alguien te traiciona? Da un ejemplo real.', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-205', text: '¿Qué cosa hiciste que si alguien de aquí lo supiera, cambiaría completamente la opinión que tiene de ti?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-206', text: '¿Cuándo manipulaste la fe o la religión de alguien para controlarlo/a?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-207', text: '¿Qué pensamiento recurrente tienes sobre alguien de aquí que nunca deberías confesar?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-208', text: '¿Cuándo te sentiste satisfecho/a al ver que alguien que te hizo daño estaba sufriendo?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-209', text: '¿Qué haría falta para que traicionaras a alguien de este grupo: dinero, poder, o placer?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-210', text: '¿Cuándo fingiste empatía ante el dolor de alguien que en el fondo te daba igual?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-211', text: '¿Qué secreto de alguien de aquí sabes que si lo revelás ahora mismo destruirías esta noche?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-212', text: '¿Cuándo te diste cuenta de que no tienes escrúpulos para conseguir lo que quieres?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-213', text: '¿Qué tanto te importa en realidad el bienestar de las personas que dices que amas?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-214', text: '¿Qué obsesión sexual o emocional tuviste con alguien de aquí que nadie sospechó?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-215', text: '¿Cuándo usaste el sexo para castigar, ignorar o humillar a tu pareja?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-216', text: '¿Qué cosa hiciste en nombre del amor que en realidad fue puro control o posesividad?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-217', text: '¿Cuándo te comportaste como el monstruo de la relación y lo sabes aunque nunca lo admites?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-218', text: '¿Qué parte de ti crees que es capaz de hacerle daño real a alguien si te provocan lo suficiente?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-219', text: '¿Cuándo cruzaste un límite sexual con alguien sin asegurarte de que quería lo mismo?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-220', text: '¿Qué pelea de pareja escaló tanto que asustaste a la otra persona?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-221', text: '¿Qué tabú sexual tuyo te genera vergüenza genuina y no lo catalogas como un kink normal?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-222', text: '¿Cuándo usaste información íntima que alguien te confió para hacerle daño después?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-223', text: '¿Qué fantasía oscura sobre alguien de este grupo mantienes con más detalle del que admitirías?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-224', text: '¿Cuándo actuaste fríamente calculador/a para destruir a alguien que te había humillado?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-225', text: '¿Qué cosa hiciste o dijiste en una relación que sabes que dejó cicatrices que no van a sanar?', level: 3, genderTarget: 'all' },
+
+  // --- Confrontación Directa en la Sala y Verdades Destructivas ---
+  { id: 'q-l3-226', text: '¿Cuándo empezaste a odiar a alguien a quien decías amar y no lo cortaste a tiempo?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-227', text: '¿Qué trauma sexual nunca has contado que cambia quién eres en la intimidad?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-228', text: '¿Cuándo violaste la privacidad de alguien de una forma que sería imperdonable si se enterara?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-229', text: '¿Qué nivel de crueldad eres capaz de alcanzar cuando alguien que amabas te hace daño?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-230', text: '¿Cuándo te convertiste en la persona que juraste que nunca serías?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-231', text: '¿Qué cosa de ti mismo/a crees que es genuinamente oscura y no tiene cura?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-232', text: '¿A quién de aquí crees que esconde algo tan grave que cambiaría cómo el grupo lo ve para siempre?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-233', text: '¿Cuándo te sentiste tan vacío/a emocionalmente que usaste a otra persona como objeto para llenarte?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-234', text: '¿Qué es lo más perverso que has imaginado hacerle a alguien por pura venganza personal?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-235', text: '¿Qué pensamiento sádico te cruzó por la mente al ver llorar o suplicar a alguien que te importaba?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-236', text: '¿Qué fetiche sexual extremo has querido probar pero no te atreves a proponer por miedo al juicio ajeno?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-237', text: '¿Cuándo fue la última vez que sentiste cero culpa tras romperle la estabilidad emocional a alguien?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-238', text: '¿A quién de esta sala manipularías emocionalmente si supieras que con eso consigues lo que quieres?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-239', text: '¿Qué secreto de salud mental, vicio o adicción ocultas a todo el mundo por vergüenza?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-240', text: '¿Con qué persona que sabes que está comprometida tendrías una aventura esta noche si nadie se entera?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-241', text: '¿Qué fantasía que involucra engañar a tu pareja en su propia cama te ha generado morbo?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-242', text: '¿Qué bajeza moral cometiste bajo el efecto de sustancias que borraste de todos lados para no ser juzgado/a?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-243', text: '¿A quién de este grupo le dirías a la cara su peor verdad si estuvieras obligado/a a decir la verdad?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-244', text: '¿Cuándo utilizaste la debilidad o el duelo de una persona para conseguir algo de ella?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-245', text: '¿Qué grabación, captura o foto íntima ajena conservas como chantaje o seguro?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-246', text: '¿Qué límite legal o ético estuviste a punto de romper por pura obsesión con alguien?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-247', text: '¿Qué pensamiento frío y calculador tuviste en un momento trágico o doloroso de alguien cercano?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-248', text: '¿A qué persona de esta sala le harías una propuesta íntima prohibida si supieras que no se ofende?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-249', text: '¿Cuál es la mentira más destructiva que has sostenido mirándole a los ojos a alguien que te amaba?', level: 3, genderTarget: 'all' },
+  { id: 'q-l3-250', text: 'Si tuvieras que arruinar la reputación de una sola persona en este cuarto para salvar la tuya, ¿a quién eliges?', level: 3, genderTarget: 'all' },
+
 ];

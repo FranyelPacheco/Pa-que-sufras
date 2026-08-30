@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import {
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Switch,
@@ -98,7 +100,10 @@ const CustomQuestionsModal = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.overlay}
+      >
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
@@ -261,7 +266,7 @@ const CustomQuestionsModal = ({
             </View>
           )}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

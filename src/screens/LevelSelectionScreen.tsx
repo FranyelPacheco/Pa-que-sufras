@@ -87,10 +87,11 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
   } = useGame();
 
   const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [pendingLevel, setPendingLevel] = useState<GameLevel | null>(null);
+  const [activeLoadingLevel, setActiveLoadingLevel] = useState<GameLevel | null>(null);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const adsInitialized = useRef(false);
   const adShownRef = useRef(false);
+  const activeAdLevelRef = useRef<GameLevel | null>(null);
   const adLoadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ad = useRewardedAd(AD_UNIT_IDS.rewarded);
@@ -102,7 +103,7 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
       void MobileAds()
         .initialize()
         .then(() => {
-          console.log('[AdMob] SDK inicializado, precargando rewarded interstitial...');
+          console.log('[AdMob] SDK inicializado, precargando anuncio...');
           ad.load();
         })
         .catch((err) => {
@@ -117,21 +118,21 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
     if (!ad.error) return;
     const err = ad.error as Error & { code?: number };
     console.warn(
-      `[AdMob] Error cargando rewarded interstitial: code=${err.code ?? 'N/A'} message=${err.message}`,
+      `[AdMob] Error cargando anuncio: code=${err.code ?? 'N/A'} message=${err.message}`,
     );
   }, [ad.error]);
 
   useEffect(() => {
     if (ad.isLoaded) {
-      console.log('[AdMob] Rewarded interstitial listo para mostrarse');
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      console.log('[AdMob] Anuncio listo para mostrarse');
     }
   }, [ad.isLoaded]);
 
   const startLevelGame = useCallback(
     (lvl: GameLevel) => {
       setIsWatchingAd(false);
-      setPendingLevel(null);
+      setActiveLoadingLevel(null);
+      activeAdLevelRef.current = null;
       if (lvl === 3) unlockLevel3();
       if (lvl === 4) unlockLevel4();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -143,64 +144,83 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
   const runFallbackAd = useCallback(
     (lvl: GameLevel) => {
       setIsWatchingAd(true);
+      setActiveLoadingLevel(lvl);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
       setTimeout(() => {
         setIsWatchingAd(false);
-        setPendingLevel(null);
+        setActiveLoadingLevel(null);
         startLevelGame(lvl);
       }, FAKE_AD_DURATION);
     },
     [startLevelGame],
   );
 
-  // Effect: cuando el ad está listo (o falla), actuar sobre pendingLevel
-  useEffect(() => {
-    if (!pendingLevel) return;
+  const triggerAdUnlock = useCallback(
+    (lvl: GameLevel) => {
+      if (isWatchingAd) return;
+      activeAdLevelRef.current = lvl;
+      setActiveLoadingLevel(lvl);
 
-    if (ad.isLoaded) {
-      if (adLoadTimeoutRef.current) clearTimeout(adLoadTimeoutRef.current);
+      if (ad.isLoaded) {
+        setIsWatchingAd(true);
+        adShownRef.current = true;
+        ad.show();
+        return;
+      }
+
+      // Si no estaba precargado, mostrar pantalla de carga e intentar cargar
       setIsWatchingAd(true);
-      adShownRef.current = true;
-      ad.show();
-      return;
-    }
+      ad.load();
 
-    if (ad.error) {
       if (adLoadTimeoutRef.current) clearTimeout(adLoadTimeoutRef.current);
-      const target = pendingLevel;
-      setPendingLevel(null);
-      runFallbackAd(target);
-      return;
-    }
+      adLoadTimeoutRef.current = setTimeout(() => {
+        if (!adShownRef.current && activeAdLevelRef.current === lvl) {
+          runFallbackAd(lvl);
+        }
+      }, 4500);
+    },
+    [isWatchingAd, ad, runFallbackAd],
+  );
 
-    // Ad aún cargando — fallback automático a los 5 segundos
-    adLoadTimeoutRef.current = setTimeout(() => {
-      const target = pendingLevel;
-      setPendingLevel(null);
-      runFallbackAd(target);
-    }, 5000);
-
-    return () => {
+  // Si el ad termina de cargar mientras el usuario espera
+  useEffect(() => {
+    if (isWatchingAd && !adShownRef.current && ad.isLoaded && activeAdLevelRef.current) {
       if (adLoadTimeoutRef.current) {
         clearTimeout(adLoadTimeoutRef.current);
         adLoadTimeoutRef.current = null;
       }
-    };
-  }, [pendingLevel, ad.isLoaded, ad.error, runFallbackAd]);
+      adShownRef.current = true;
+      ad.show();
+    }
+  }, [isWatchingAd, ad.isLoaded, ad]);
 
-  // Effect: ad cerrado — leer isEarnedReward directamente aquí
+  // Si hay error cargando el ad mientras el usuario esperaba
+  useEffect(() => {
+    if (isWatchingAd && !adShownRef.current && ad.error && activeAdLevelRef.current) {
+      if (adLoadTimeoutRef.current) {
+        clearTimeout(adLoadTimeoutRef.current);
+        adLoadTimeoutRef.current = null;
+      }
+      const lvl = activeAdLevelRef.current;
+      runFallbackAd(lvl);
+    }
+  }, [isWatchingAd, ad.error, runFallbackAd]);
+
+  // Cuando el ad se cierra: verificar recompensa e iniciar (sin bucles ni recargas inmediatas)
   useEffect(() => {
     if (!adShownRef.current || !ad.isClosed) return;
     adShownRef.current = false;
     setIsWatchingAd(false);
-    ad.load(); // Precarga el siguiente
-    if (ad.isEarnedReward && pendingLevel) {
-      startLevelGame(pendingLevel);
-    } else {
-      setPendingLevel(null);
+    setActiveLoadingLevel(null);
+
+    const target = activeAdLevelRef.current;
+    activeAdLevelRef.current = null;
+
+    if (ad.isEarnedReward && target) {
+      startLevelGame(target);
     }
-  }, [ad.isClosed, ad.isEarnedReward, pendingLevel, startLevelGame]);
+  }, [ad.isClosed, ad.isEarnedReward, startLevelGame]);
 
   const handleLevelPress = (level: GameLevel) => {
     if (isWatchingAd) return;
@@ -215,8 +235,7 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
 
     if (level === 3 && !isLevel3Unlocked) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      ad.load();
-      setPendingLevel(3);
+      triggerAdUnlock(3);
       return;
     }
 
@@ -226,8 +245,7 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
   const handleStartCustomGameFromModal = () => {
     setShowCustomModal(false);
     if (!isLevel4Unlocked) {
-      ad.load();
-      setPendingLevel(4);
+      triggerAdUnlock(4);
       return;
     }
     startGame(4);
@@ -263,7 +281,7 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
               (item.level === 4 && !isLevel4Unlocked);
 
             const isLocked = isLevelLocked && !isWatchingAd;
-            const isLoadingThisLevel = pendingLevel === item.level && isWatchingAd;
+            const isLoadingThisLevel = activeLoadingLevel === item.level && isWatchingAd;
             const isUnlocked = !isLevelLocked && item.isPremium && !isWatchingAd;
 
             const levelColor =
@@ -289,7 +307,7 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
                       borderColor: item.isPremium ? levelColor.border : colors.border,
                     },
                     pressed && !isWatchingAd && styles.cardPressed,
-                    isWatchingAd && pendingLevel !== item.level && styles.cardDisabled,
+                    isWatchingAd && activeLoadingLevel !== item.level && styles.cardDisabled,
                   ]}
                 >
                   <View style={styles.cardHeader}>

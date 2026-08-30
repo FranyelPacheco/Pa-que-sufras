@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BannerAd, BannerAdSize, useInterstitialAd, useRewardedAd } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
 
 import { colors } from '../theme/colors';
 import { borderRadius, spacing } from '../theme/spacing';
@@ -68,7 +68,6 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   const lastInterstitialTimeRef = useRef<number>(Date.now());
   const revanchaAdShownRef = useRef(false);
 
-  const rewardAd = useRewardedAd(AD_UNIT_IDS.rewarded);
   const interstitialAd = useInterstitialAd(AD_UNIT_IDS.interstitial);
 
   useEffect(() => {
@@ -82,18 +81,18 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   }, [interstitialAd.isClosed]);
 
   useEffect(() => {
-    if (!rewardAd.error) return;
-    const err = rewardAd.error as Error & { code?: number };
+    if (!interstitialAd.error) return;
+    const err = interstitialAd.error as Error & { code?: number };
     console.warn(
-      `[AdMob] Error cargando rewarded (revancha): code=${err.code ?? 'N/A'} message=${err.message}`,
+      `[AdMob] Error cargando interstitial: code=${err.code ?? 'N/A'} message=${err.message}`,
     );
-  }, [rewardAd.error]);
+  }, [interstitialAd.error]);
 
   useEffect(() => {
-    if (rewardAd.isLoaded) {
-      console.log('[AdMob] Rewarded de revancha listo');
+    if (interstitialAd.isLoaded) {
+      console.log('[AdMob] Interstitial listo para mostrarse');
     }
-  }, [rewardAd.isLoaded]);
+  }, [interstitialAd.isLoaded]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseOpacity.value,
@@ -179,7 +178,14 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     if (pool.length === 0) {
       const fullLevelPool = getAssignableQuestions(currentLevel, players);
 
-      if (fullLevelPool.length === 0) return;
+      if (fullLevelPool.length === 0) {
+        setDeckResetNotice(
+          currentLevel === 4
+            ? 'No hay preguntas personalizadas para los géneros del grupo'
+            : 'No hay preguntas disponibles para los jugadores actuales',
+        );
+        return;
+      }
 
       setDeckResetNotice(DECK_RESET_MESSAGE);
       setUsedQuestionIds([]);
@@ -236,9 +242,9 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   }, [currentLevel, startGame]);
 
   const handleRevancha = useCallback(() => {
-    if (rewardAd.isLoaded) {
+    if (interstitialAd.isLoaded) {
       revanchaAdShownRef.current = true;
-      rewardAd.show();
+      interstitialAd.show();
       return;
     }
 
@@ -248,17 +254,16 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
       setShowPodium(false);
       doRevancha();
     }, 2000);
-  }, [rewardAd, doRevancha]);
+  }, [interstitialAd, doRevancha]);
 
-  // Se dispara solo si el ad fue mostrado en ESTE ciclo (revanchaAdShownRef.current === true)
-  // Evita el bug donde isClosed=true del ciclo anterior dispara la revancha prematuramente
+  // Se dispara solo si el ad fue mostrado en ESTE ciclo de revancha
   useEffect(() => {
-    if (!revanchaAdShownRef.current || !rewardAd.isClosed) return;
+    if (!revanchaAdShownRef.current || !interstitialAd.isClosed) return;
     revanchaAdShownRef.current = false;
     setShowPodium(false);
     doRevancha();
-    rewardAd.load();
-  }, [rewardAd.isClosed, doRevancha, rewardAd]);
+    interstitialAd.load();
+  }, [interstitialAd.isClosed, doRevancha, interstitialAd]);
 
   const handleMenuFromPodium = useCallback(() => {
     if (fakeAdTimerRef.current) {
@@ -278,9 +283,9 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   const handleOpenPodium = useCallback(() => {
     setShowEndConfirm(false);
     recordGameSession(questionCountRef.current);
-    rewardAd.load();
+    interstitialAd.load();
     setShowPodium(true);
-  }, [recordGameSession, rewardAd]);
+  }, [recordGameSession, interstitialAd]);
 
   useEffect(
     () => () => {

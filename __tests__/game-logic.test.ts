@@ -13,14 +13,15 @@ import { getAssignableQuestions, pickRandomItem, shuffleArray } from '../src/uti
 import type { Player } from '../src/types/game';
 
 describe('Questions bank', () => {
-  it('should have 200 questions per level', () => {
+  it('should have exactly 250 questions per level (750 total)', () => {
     const level1 = QUESTIONS.filter((q) => q.level === 1);
     const level2 = QUESTIONS.filter((q) => q.level === 2);
     const level3 = QUESTIONS.filter((q) => q.level === 3);
 
-    expect(level1.length).toBe(200);
-    expect(level2.length).toBe(200);
-    expect(level3.length).toBe(200);
+    expect(level1.length).toBe(250);
+    expect(level2.length).toBe(250);
+    expect(level3.length).toBe(250);
+    expect(QUESTIONS.length).toBe(750);
   });
 
   it('should have unique IDs for all questions', () => {
@@ -83,7 +84,8 @@ describe('Question assignment logic', () => {
 
   it('should return all level 1 questions for mixed group', () => {
     const pool = getAssignableQuestions(1, mixedPlayers);
-    expect(pool.length).toBe(200);
+    const total = QUESTIONS.filter((q) => q.level === 1).length;
+    expect(pool.length).toBe(total);
   });
 
   it('should filter out male-only questions when only females play', () => {
@@ -100,7 +102,8 @@ describe('Question assignment logic', () => {
 
   it('should exclude already-used question IDs', () => {
     const pool = getAssignableQuestions(1, mixedPlayers, ['q-l1-01', 'q-l1-02']);
-    expect(pool.length).toBe(198);
+    const total = QUESTIONS.filter((q) => q.level === 1).length;
+    expect(pool.length).toBe(total - 2);
     expect(pool.some((q) => q.id === 'q-l1-01')).toBe(false);
     expect(pool.some((q) => q.id === 'q-l1-02')).toBe(false);
   });

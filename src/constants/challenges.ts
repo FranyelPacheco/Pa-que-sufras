@@ -13,7 +13,7 @@ export const CHALLENGES: Record<1 | 2 | 3 | 4, string[]> = {
     'Deja que el grupo elija un estado de WhatsApp y te lo ponga durante 1 hora.',
     'Habla con acento extranjero durante las proximas 2 rondas.',
     'Deja que alguien del grupo lea en voz alta la ultima busqueda en tu Google.',
-    'Imita a tu papa o mama regananddote. El grupo vota si es creible.',
+    'Imita a tu papa o mama regañandote. El grupo vota si es creible.',
     'Cuenta el chisme mas reciente que sabes sin decir nombres.',
     'Escribe un elogio sincero sobre la persona a tu izquierda y leelo en voz alta.',
     'Haz 10 sentadillas mientras cantas el coro de una cancion que elija el grupo.',

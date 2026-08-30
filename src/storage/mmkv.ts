@@ -36,7 +36,8 @@ export const getGameHistory = (): GameHistoryEntry[] => {
   const raw = storage.getString(KEYS.GAME_HISTORY);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as GameHistoryEntry[];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as GameHistoryEntry[]) : [];
   } catch {
     return [];
   }
@@ -53,7 +54,8 @@ export const getCustomQuestions = (): CustomQuestionEntry[] => {
   const raw = storage.getString(KEYS.CUSTOM_QUESTIONS);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as CustomQuestionEntry[];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CustomQuestionEntry[]) : [];
   } catch {
     return [];
   }
