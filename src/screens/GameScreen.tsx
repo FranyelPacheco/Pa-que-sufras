@@ -54,7 +54,6 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showPodium, setShowPodium] = useState(false);
   const [isWatchingFakeAd, setIsWatchingFakeAd] = useState(false);
-  const [revanchaPending, setRevanchaPending] = useState(false);
   const [turnKey, setTurnKey] = useState(0);
   // Modo Retos: contador de fallos por jugador (id → streak)
   const [failStreaks, setFailStreaks] = useState<Record<string, number>>({});
@@ -64,6 +63,9 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   const questionCountRef = useRef(0);
   const playerQueueRef = useRef<string[]>([]);
   const fakeAdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref de control: true solo cuando rewardAd.show() fue llamado en este ciclo.
+  // Evita el falso-positivo donde isClosed=true viene de un ciclo anterior.
+  const revanchaAdShownRef = useRef(false);
 
   const rewardAd = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
 
@@ -206,7 +208,7 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
 
   const handleRevancha = useCallback(() => {
     if (rewardAd.isLoaded) {
-      setRevanchaPending(true);
+      revanchaAdShownRef.current = true;
       rewardAd.show();
       return;
     }
@@ -219,21 +221,23 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     }, 2000);
   }, [rewardAd, doRevancha]);
 
+  // Se dispara solo si el ad fue mostrado en ESTE ciclo (revanchaAdShownRef.current === true)
+  // Evita el bug donde isClosed=true del ciclo anterior dispara la revancha prematuramente
   useEffect(() => {
-    if (!revanchaPending || !rewardAd.isClosed) return;
-    setRevanchaPending(false);
+    if (!revanchaAdShownRef.current || !rewardAd.isClosed) return;
+    revanchaAdShownRef.current = false;
     setShowPodium(false);
     doRevancha();
     rewardAd.load();
-  }, [revanchaPending, rewardAd.isClosed, doRevancha, rewardAd]);
+  }, [rewardAd.isClosed, doRevancha, rewardAd]);
 
   const handleMenuFromPodium = useCallback(() => {
     if (fakeAdTimerRef.current) {
       clearTimeout(fakeAdTimerRef.current);
       fakeAdTimerRef.current = null;
     }
+    revanchaAdShownRef.current = false;
     setShowPodium(false);
-    setRevanchaPending(false);
 
     if (Platform.OS === 'android') {
       NavigationBar.setHidden(false);

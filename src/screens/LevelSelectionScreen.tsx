@@ -72,6 +72,10 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [pendingStart, setPendingStart] = useState(false);
   const adsInitialized = useRef(false);
+  // Ref de control: true solo cuando ad.show() fue llamado en este ciclo.
+  const adShownRef = useRef(false);
+  // Timeout de respaldo si el ad no carga en 5 segundos.
+  const adLoadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ad = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
 
@@ -116,34 +120,6 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
     startGame(3);
   }, [unlockLevel3, startGame]);
 
-  const handleAdClose = useCallback(() => {
-    ad.load();
-    if (ad.isEarnedReward) {
-      startLevel3Game();
-    } else {
-      setIsWatchingAd(false);
-      setPendingStart(false);
-    }
-  }, [ad, ad.isEarnedReward, startLevel3Game]);
-
-  useEffect(() => {
-    if (!pendingStart) return;
-    if (ad.isLoaded) {
-      setIsWatchingAd(true);
-      ad.show();
-      return;
-    }
-    if (ad.error) {
-      runFallbackAd();
-      return;
-    }
-  }, [pendingStart, ad.isLoaded, ad.error]);
-
-  useEffect(() => {
-    if (!isWatchingAd || !ad.isClosed) return;
-    handleAdClose();
-  }, [ad.isClosed, isWatchingAd, handleAdClose]);
-
   const runFallbackAd = useCallback(() => {
     setIsWatchingAd(true);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -154,6 +130,52 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
       startLevel3Game();
     }, FAKE_AD_DURATION);
   }, [startLevel3Game]);
+
+  // Effect: cuando el ad está listo (o falla), actuar sobre pendingStart
+  useEffect(() => {
+    if (!pendingStart) return;
+
+    if (ad.isLoaded) {
+      if (adLoadTimeoutRef.current) clearTimeout(adLoadTimeoutRef.current);
+      setIsWatchingAd(true);
+      adShownRef.current = true;
+      ad.show();
+      setPendingStart(false);
+      return;
+    }
+
+    if (ad.error) {
+      if (adLoadTimeoutRef.current) clearTimeout(adLoadTimeoutRef.current);
+      setPendingStart(false);
+      runFallbackAd();
+      return;
+    }
+
+    // Ad aún cargando — fallback automático a los 5 segundos
+    adLoadTimeoutRef.current = setTimeout(() => {
+      setPendingStart(false);
+      runFallbackAd();
+    }, 5000);
+
+    return () => {
+      if (adLoadTimeoutRef.current) {
+        clearTimeout(adLoadTimeoutRef.current);
+        adLoadTimeoutRef.current = null;
+      }
+    };
+  }, [pendingStart, ad.isLoaded, ad.error, runFallbackAd]);
+
+  // Effect: ad cerrado — leer isEarnedReward directamente aquí (no en callback)
+  // para evitar el stale closure que causaba que startLevel3Game nunca se llamara
+  useEffect(() => {
+    if (!adShownRef.current || !ad.isClosed) return;
+    adShownRef.current = false;
+    setIsWatchingAd(false);
+    ad.load(); // Precarga el siguiente
+    if (ad.isEarnedReward) {
+      startLevel3Game();
+    }
+  }, [ad.isClosed, ad.isEarnedReward, startLevel3Game]);
 
   const handleLevelPress = (level: GameLevel) => {
     if (isWatchingAd) return;
