@@ -23,6 +23,7 @@ export const colors = {
   level1: { accent: '#C8C8C8', border: '#555555' },
   level2: { accent: '#8B5CF6', border: '#7C3AED' },
   level3: { accent: '#FF2E63', border: '#FF2E63' },
+  level4: { accent: '#06B6D4', border: '#0891B2' },
 } as const;
 
 export const avatarColors = [

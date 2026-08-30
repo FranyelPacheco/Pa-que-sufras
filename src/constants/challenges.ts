@@ -1,9 +1,9 @@
-﻿// Retos por nivel. Se muestran cuando un jugador acumula 3 fallos seguidos.
+// Retos por nivel. Se muestran cuando un jugador acumula 3 fallos seguidos.
 // Nivel 1: Retos sociales y divertidos.
 // Nivel 2: Retos atrevidos / de pareja / coqueteos.
 // Nivel 3: Retos picantes / incomodos / comprometedores.
 
-export const CHALLENGES: Record<1 | 2 | 3, string[]> = {
+export const CHALLENGES: Record<1 | 2 | 3 | 4, string[]> = {
   1: [
     'Imita a alguien de este grupo durante 30 segundos hasta que adivinen quien es.',
     'Deja que el grupo te inspeccione los mensajes recientes de WhatsApp durante 10 segundos.',
@@ -69,5 +69,27 @@ export const CHALLENGES: Record<1 | 2 | 3, string[]> = {
     'Revela el secreto mas oscuro que guardas de alguien presente en esta sala.',
     'Describe tu tipo ideal en la cama con detalle. El grupo adivina a quien de los presentes se parece.',
     'El grupo decide: beberas lo que elijan, haras lo que elijan, o confiesas lo que elijan. Elige una.',
+  ],
+  4: [
+    'El grupo inventa un castigo exclusivo y personalizado para ti ahora mismo.',
+    'Confiesa la verdad sobre la persona que escribió la última pregunta.',
+    'Deja que el grupo elija a quién de los presentes debes darle un abrazo de 20 segundos.',
+    'Imita la risa o la pose típica de quien esté a tu derecha.',
+    'El grupo decide un trago o penitencia personalizada para ti.',
+    'Confiesa cuál pregunta de este pack personalizado te dio más miedo que te tocara.',
+    'Muestra la última foto que tomaste con alguien de este grupo.',
+    'Deja que el jugador con más puntos elija tu castigo.',
+    'Haz un brindis con dedicatoria vergonzosa para el grupo.',
+    'Cuenta la historia real detrás de una de las preguntas personalizadas del grupo.',
+    'Deja que el grupo te cambie el nombre en el juego por el apodo más ridículo.',
+    'El grupo elige: responder la siguiente pregunta o cumplir 2 retos seguidos.',
+    'Describe el peor defecto y la mejor cualidad de la persona a tu izquierda.',
+    'Pasa tu teléfono desbloqueado a la persona de enfrente por 10 segundos.',
+    'Haz una videollamada a quien el grupo elija y cuelga en 3 segundos.',
+    'Confiesa un chisme que juraste no contar sobre alguien del grupo.',
+    'El grupo vota: debes confesar tu mayor secreto o invitar la próxima ronda.',
+    'Haz una declaración de amor exagerada y dramática a quien el grupo elija.',
+    'Muestra tu última nota guardada o recordatorio en el celular.',
+    'Cumple una orden directa que el grupo vote por mayoría.',
   ],
 };

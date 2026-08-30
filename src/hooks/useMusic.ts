@@ -23,16 +23,18 @@ export const useMusic = () => {
     });
   }, []);
 
-  const playLevel = useCallback((level: 1 | 2 | 3) => {
+  const playLevel = useCallback((level: 1 | 2 | 3 | 4) => {
     const prev = currentLevelRef.current;
     currentLevelRef.current = level;
 
-    const prevPlayer = allPlayers[prev - 1];
+    const prevIndex = prev === 4 ? 1 : prev - 1;
+    const prevPlayer = allPlayers[prevIndex];
     if (prevPlayer) {
       prevPlayer.pause();
     }
 
-    const player = allPlayers[level - 1];
+    const nextIndex = level === 4 ? 1 : level - 1;
+    const player = allPlayers[nextIndex];
     if (player) {
       player.play();
     }

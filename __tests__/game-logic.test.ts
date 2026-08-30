@@ -1,3 +1,12 @@
+jest.mock('react-native-mmkv', () => ({
+  createMMKV: () => ({
+    getString: jest.fn(() => null),
+    set: jest.fn(),
+    getNumber: jest.fn(() => 0),
+    getBoolean: jest.fn(() => false),
+  }),
+}));
+
 import { QUESTIONS } from '../src/constants/questions';
 import { CHALLENGES } from '../src/constants/challenges';
 import { getAssignableQuestions, pickRandomItem, shuffleArray } from '../src/utils/game';
@@ -38,11 +47,12 @@ describe('Challenges bank', () => {
     expect(CHALLENGES[1].length).toBeGreaterThanOrEqual(20);
     expect(CHALLENGES[2].length).toBeGreaterThanOrEqual(20);
     expect(CHALLENGES[3].length).toBeGreaterThanOrEqual(20);
+    expect(CHALLENGES[4].length).toBeGreaterThanOrEqual(20);
   });
 
   it('should contain non-empty strings', () => {
-    [1, 2, 3].forEach((lvl) => {
-      CHALLENGES[lvl as 1 | 2 | 3].forEach((ch) => {
+    [1, 2, 3, 4].forEach((lvl) => {
+      CHALLENGES[lvl as 1 | 2 | 3 | 4].forEach((ch) => {
         expect(typeof ch).toBe('string');
         expect(ch.trim().length).toBeGreaterThan(5);
       });

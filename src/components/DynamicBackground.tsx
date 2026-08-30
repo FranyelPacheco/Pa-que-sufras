@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-type GameLevel = 1 | 2 | 3;
+type GameLevel = 1 | 2 | 3 | 4;
 
 type DynamicBackgroundProps = {
   currentLevel: GameLevel;
@@ -65,6 +65,16 @@ const LEVEL_CONFIG: Record<GameLevel, LevelConfig> = {
       { icon: 'chili-hot', x: '78%', y: 26, floatAmt: 20, duration: 3700, delay: 500, size: 32, drift: 10 },
       { icon: 'devil', x: '14%', y: 66, floatAmt: 26, duration: 3300, delay: 900, size: 36, drift: 6 },
       { icon: 'mask', x: '76%', y: 80, floatAmt: 22, duration: 3900, delay: 1300, size: 32, drift: 12 },
+    ],
+  },
+  4: {
+    gradient: ['#0A252E', '#0A0A0A'] as const,
+    accent: '#06B6D4',
+    icons: [
+      { icon: 'pencil-box-multiple', x: '10%', y: 16, floatAmt: 22, duration: 3200, delay: 0, size: 32, drift: 8 },
+      { icon: 'account-group', x: '76%', y: 28, floatAmt: 26, duration: 3800, delay: 600, size: 34, drift: 10 },
+      { icon: 'cards-playing-spade-multiple', x: '16%', y: 66, floatAmt: 20, duration: 3100, delay: 900, size: 30, drift: 6 },
+      { icon: 'star-shooting', x: '74%', y: 80, floatAmt: 24, duration: 3600, delay: 1300, size: 32, drift: 12 },
     ],
   },
 };

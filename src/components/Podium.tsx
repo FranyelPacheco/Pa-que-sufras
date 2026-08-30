@@ -1,13 +1,15 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import {
   Image,
   Modal,
+  Share,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -22,9 +24,7 @@ import { colors } from '../theme/colors';
 import { borderRadius, spacing } from '../theme/spacing';
 import { fontSizes, fontWeights, letterSpacings } from '../theme/typography';
 import Button from './ui/Button';
-import type { Player } from '../types/game';
-
-type GameLevel = 1 | 2 | 3;
+import type { GameLevel, Player } from '../types/game';
 
 type PodiumPlayer = { player: Player; score: number };
 
@@ -91,6 +91,10 @@ const FloatingCharacter = ({ player, delay }: { player: Player; delay: number })
       delay,
       withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true),
     );
+
+    return () => {
+      cancelAnimation(y);
+    };
   }, [delay, y]);
 
   const style = useAnimatedStyle(() => ({
@@ -120,6 +124,10 @@ const Piece = ({ piece, level }: { piece: FallingPiece; level: GameLevel }) => {
       piece.delay,
       withTiming(1, { duration: piece.duration, easing: Easing.linear }),
     );
+
+    return () => {
+      cancelAnimation(progress);
+    };
   }, [piece, progress]);
 
   const style = useAnimatedStyle(() => {
@@ -255,6 +263,42 @@ const Podium = ({ visible, players, scores, currentLevel, onRevancha, onMenu }: 
     };
   }, [ranked]);
 
+  const handleSharePodium = useCallback(async () => {
+    try {
+      const top1 = ranked[0];
+      const levelNames = {
+        1: 'Conociéndonos 💬',
+        2: 'Juego previo 🔥',
+        3: 'Se 😈',
+        4: 'Modo Personalizado ✍️',
+      };
+
+      const levelTitle = levelNames[currentLevel] ?? `Nivel ${currentLevel}`;
+      let text = `🏆 ¡RESULTADOS DE LA PARTIDA! — Pa' que sufras 🔥\n`;
+      text += `Intensidad: ${levelTitle}\n\n`;
+
+      if (hasTie) {
+        text += `👑 EMPATE EN ORO:\n`;
+        topRow.forEach((r) => {
+          text += `🥇 ${r.player.name} (${r.score} pts)\n`;
+        });
+      } else if (top1) {
+        text += `👑 GANADOR/A: ${top1.player.name} con ${top1.score} pts\n`;
+        if (ranked[1]) text += `🥈 2do: ${ranked[1].player.name} (${ranked[1].score} pts)\n`;
+        if (ranked[2]) text += `🥉 3ro: ${ranked[2].player.name} (${ranked[2].score} pts)\n`;
+      }
+
+      text += `\n¿Te atreves a jugar la próxima ronda? 😈🍻`;
+
+      await Share.share({
+        message: text,
+        title: "Resultados de Pa' que sufras",
+      });
+    } catch (err) {
+      console.warn('Error compartiendo podio:', err);
+    }
+  }, [ranked, hasTie, topRow, currentLevel]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onMenu}>
       <View style={styles.overlay}>
@@ -329,11 +373,18 @@ const Podium = ({ visible, players, scores, currentLevel, onRevancha, onMenu }: 
             <Text style={styles.extraText}>y {extraBottom} jugadores más...</Text>
           )}
 
+          <Button
+            label="📸 Compartir Podio"
+            variant="outline"
+            onPress={handleSharePodium}
+            style={styles.shareBtn}
+          />
+
           <View style={styles.actions}>
             <Button label="Revancha" onPress={onRevancha} style={styles.actionBtn} />
             <Button label="Menú principal" variant="ghost" onPress={onMenu} style={styles.actionBtn} />
           </View>
-          <Text style={styles.adHint}>La revancha se desbloquea con un anuncio corto</Text>
+          <Text style={styles.adHint}>La revancha se desbloquea con un video publicitario</Text>
         </View>
       </View>
     </Modal>
@@ -440,10 +491,14 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacings.wide,
     marginTop: spacing.xs,
   },
+  shareBtn: {
+    marginTop: spacing.xl,
+    width: '100%',
+  },
   actions: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: spacing['4xl'],
+    marginTop: spacing.md,
     width: '100%',
   },
   actionBtn: {

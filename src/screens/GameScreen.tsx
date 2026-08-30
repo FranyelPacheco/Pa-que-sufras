@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BannerAd, BannerAdSize, useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, useInterstitialAd, useRewardedAd } from 'react-native-google-mobile-ads';
 
 import { colors } from '../theme/colors';
 import { borderRadius, spacing } from '../theme/spacing';
@@ -42,6 +42,8 @@ type TurnState = {
 type AnswerState = 'idle' | 'correct' | 'incorrect';
 
 const DECK_RESET_MESSAGE = '¡Se terminaron las preguntas! Reiniciando mazo...';
+const INTERSTITIAL_INTERVAL = 25; // Cada 25 preguntas
+const INTERSTITIAL_COOLDOWN_MS = 240000; // 4 minutos de cooldown
 
 const GameScreen = ({ onQuit }: GameScreenProps) => {
   const { players, currentLevel, scores, awardPoint, isMuted, toggleMute, quitGame, startGame, recordGameSession } = useGame();
@@ -63,23 +65,33 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
   const questionCountRef = useRef(0);
   const playerQueueRef = useRef<string[]>([]);
   const fakeAdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Ref de control: true solo cuando rewardAd.show() fue llamado en este ciclo.
-  // Evita el falso-positivo donde isClosed=true viene de un ciclo anterior.
+  const lastInterstitialTimeRef = useRef<number>(Date.now());
   const revanchaAdShownRef = useRef(false);
 
-  const rewardAd = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
+  const rewardAd = useRewardedAd(AD_UNIT_IDS.rewarded);
+  const interstitialAd = useInterstitialAd(AD_UNIT_IDS.interstitial);
+
+  useEffect(() => {
+    interstitialAd.load();
+  }, []);
+
+  useEffect(() => {
+    if (interstitialAd.isClosed) {
+      interstitialAd.load();
+    }
+  }, [interstitialAd.isClosed]);
 
   useEffect(() => {
     if (!rewardAd.error) return;
     const err = rewardAd.error as Error & { code?: number };
     console.warn(
-      `[AdMob] Error cargando rewarded interstitial (revancha): code=${err.code ?? 'N/A'} message=${err.message}`,
+      `[AdMob] Error cargando rewarded (revancha): code=${err.code ?? 'N/A'} message=${err.message}`,
     );
   }, [rewardAd.error]);
 
   useEffect(() => {
     if (rewardAd.isLoaded) {
-      console.log('[AdMob] Rewarded interstitial de revancha listo');
+      console.log('[AdMob] Rewarded de revancha listo');
     }
   }, [rewardAd.isLoaded]);
 
@@ -190,9 +202,26 @@ const GameScreen = ({ onQuit }: GameScreenProps) => {
     setQuestionCount((prev) => {
       const next = prev + 1;
       questionCountRef.current = next;
+
+      // Interstitial cada 25 preguntas si no está en nivel 3 y se cumplió el cooldown
+      if (
+        next > 0 &&
+        next % INTERSTITIAL_INTERVAL === 0 &&
+        currentLevel !== 3 &&
+        interstitialAd.isLoaded
+      ) {
+        const now = Date.now();
+        if (now - lastInterstitialTimeRef.current >= INTERSTITIAL_COOLDOWN_MS) {
+          lastInterstitialTimeRef.current = now;
+          setTimeout(() => {
+            interstitialAd.show();
+          }, 350);
+        }
+      }
+
       return next;
     });
-  }, [currentLevel, players, usedQuestionIds, triggerPulse, pickPlayerForQuestion]);
+  }, [currentLevel, players, usedQuestionIds, triggerPulse, pickPlayerForQuestion, interstitialAd]);
 
   const doRevancha = useCallback(() => {
     startGame(currentLevel);

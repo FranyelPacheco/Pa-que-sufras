@@ -1,4 +1,5 @@
 import { QUESTIONS } from '../constants/questions';
+import { getCustomQuestions, getMixCustomQuestionsEnabled } from '../storage/mmkv';
 import type { Player, Question } from '../types/game';
 
 export const pickRandomItem = <T,>(items: T[]): T | null => {
@@ -29,8 +30,31 @@ export const getAssignableQuestions = (
   players: Player[],
   excludedIds: string[] = [],
 ): Question[] => {
-  return QUESTIONS.filter((question) => {
-    if (question.level !== level) return false;
+  // 1. Cargar preguntas personalizadas de MMKV
+  const customList = getCustomQuestions().map(
+    (cq): Question => ({
+      id: cq.id,
+      text: cq.text,
+      level: 4,
+      genderTarget: cq.genderTarget,
+    }),
+  );
+
+  let pool: Question[] = [];
+
+  if (level === 4) {
+    // Si es nivel 4, el mazo principal son las personalizadas
+    pool = customList;
+  } else {
+    // Si es nivel 1, 2 o 3, cargar las oficiales
+    pool = QUESTIONS.filter((q) => q.level === level);
+    // Si el usuario activó mezclar preguntas personalizadas, agregarlas
+    if (getMixCustomQuestionsEnabled() && customList.length > 0) {
+      pool = [...pool, ...customList];
+    }
+  }
+
+  return pool.filter((question) => {
     if (excludedIds.includes(question.id)) return false;
     const eligiblePlayers = getPlayersForGenderTarget(players, question.genderTarget);
     return eligiblePlayers.length > 0;

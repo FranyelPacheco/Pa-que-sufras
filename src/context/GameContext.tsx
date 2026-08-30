@@ -8,33 +8,44 @@ import {
 } from 'react';
 import * as Crypto from 'expo-crypto';
 
-import type { Player } from '../types/game';
+import type { GameLevel, Player } from '../types/game';
 import { avatarColors } from '../theme/colors';
 import {
   addGameToHistory,
   incrementGamesPlayed,
+  getCustomQuestions,
+  getMixCustomQuestionsEnabled,
+  setMixCustomQuestionsEnabled,
+  saveCustomQuestion,
+  deleteCustomQuestion,
+  type CustomQuestionEntry,
 } from '../storage/mmkv';
-
-type GameLevel = 1 | 2 | 3;
 
 type GameContextValue = {
   players: Player[];
   currentLevel: GameLevel;
   isPlaying: boolean;
   isLevel3Unlocked: boolean;
+  isLevel4Unlocked: boolean;
   isMuted: boolean;
   scores: Record<string, number>;
+  customQuestions: CustomQuestionEntry[];
+  isMixEnabled: boolean;
   addPlayer: (name: string, gender: 'H' | 'M') => string | null;
   removePlayer: (id: string) => void;
   resetPlayers: () => void;
   startGame: (level: GameLevel) => void;
   quitGame: () => void;
   unlockLevel3: () => void;
+  unlockLevel4: () => void;
   isNameDuplicate: (name: string) => boolean;
   awardPoint: (playerId: string) => void;
   resetScores: () => void;
   toggleMute: () => void;
   recordGameSession: (questionsAsked: number) => void;
+  addCustomQuestion: (text: string, genderTarget: 'all' | 'H' | 'M') => void;
+  removeCustomQuestion: (id: string) => void;
+  toggleMixCustomQuestions: () => void;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -50,8 +61,11 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   const [currentLevel, setCurrentLevel] = useState<GameLevel>(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLevel3Unlocked, setIsLevel3Unlocked] = useState(false);
+  const [isLevel4Unlocked, setIsLevel4Unlocked] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestionEntry[]>(() => getCustomQuestions());
+  const [isMixEnabled, setIsMixEnabled] = useState<boolean>(() => getMixCustomQuestionsEnabled());
 
   const isNameDuplicate = useCallback(
     (name: string) => {
@@ -115,6 +129,28 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     setIsLevel3Unlocked(true);
   }, []);
 
+  const unlockLevel4 = useCallback(() => {
+    setIsLevel4Unlocked(true);
+  }, []);
+
+  const addCustomQuestion = useCallback((text: string, genderTarget: 'all' | 'H' | 'M') => {
+    saveCustomQuestion({ text, genderTarget });
+    setCustomQuestions(getCustomQuestions());
+  }, []);
+
+  const removeCustomQuestion = useCallback((id: string) => {
+    deleteCustomQuestion(id);
+    setCustomQuestions(getCustomQuestions());
+  }, []);
+
+  const toggleMixCustomQuestions = useCallback(() => {
+    setIsMixEnabled((prev) => {
+      const next = !prev;
+      setMixCustomQuestionsEnabled(next);
+      return next;
+    });
+  }, []);
+
   const awardPoint = useCallback((playerId: string) => {
     setScores((prev) => ({
       ...prev,
@@ -149,38 +185,52 @@ export const GameProvider = ({ children }: GameProviderProps) => {
       currentLevel,
       isPlaying,
       isLevel3Unlocked,
+      isLevel4Unlocked,
       isMuted,
       scores,
+      customQuestions,
+      isMixEnabled,
       addPlayer,
       removePlayer,
       resetPlayers,
       startGame,
       quitGame,
       unlockLevel3,
+      unlockLevel4,
       isNameDuplicate,
       awardPoint,
       resetScores,
       toggleMute,
       recordGameSession,
+      addCustomQuestion,
+      removeCustomQuestion,
+      toggleMixCustomQuestions,
     }),
     [
       players,
       currentLevel,
       isPlaying,
       isLevel3Unlocked,
+      isLevel4Unlocked,
       isMuted,
       scores,
+      customQuestions,
+      isMixEnabled,
       addPlayer,
       removePlayer,
       resetPlayers,
       startGame,
       quitGame,
       unlockLevel3,
+      unlockLevel4,
       isNameDuplicate,
       awardPoint,
       resetScores,
       toggleMute,
       recordGameSession,
+      addCustomQuestion,
+      removeCustomQuestion,
+      toggleMixCustomQuestions,
     ],
   );
 

@@ -232,9 +232,24 @@ Estilos actuales sugeridos:
 - Nivel 2 (Juego previo): Smooth, misterioso, jazz
 - Nivel 3 (Se 😈): Electrónico, intenso, provocativo
 
-## 9. Ads — IDs de AdMob
-| Tipo | ID |
-|---|---|
-| App ID | `ca-app-pub-2173298418951684~4528601629` |
-| Banner Ad Unit | `ca-app-pub-2173298418951684/1902438280` |
-| Rewarded Interstitial Ad Unit | `ca-app-pub-2173298418951684/5870291819` |
+## 10. Actualización Reciente (Overhaul, Modo Personalizado & Monetización) 🚀
+- **Compresión de Audios MP3**:
+  - `level1.mp3`, `level2.mp3`, `level3.mp3` optimizados con `ffmpeg` de ~12 MB a ~5.2 MB totales con calidad limpia en 112kbps Stereo.
+- **Overhaul de Preguntas**:
+  - Reemplazo masivo de 100 preguntas en Nivel 1 (`q-l1-101` a `q-l1-200`) enfocadas en vergüenzas cotidianas, redes sociales, manías y dinámicas grupales ligeras.
+  - Corrección de asignaciones de género erróneas (`q-l1-66`, `q-l1-68`, `q-l2-05`, `q-l2-40`, `q-l2-42`).
+  - Reformulación de preguntas directas ("al grano") y saneamiento de preguntas con implicaciones no consensuales (`q-l3-15`).
+- **Nivel 4: Modo Personalizado ("Preguntas del Grupo")**:
+  - Creación de `CustomQuestionsModal.tsx` para agregar, listar y eliminar preguntas guardadas permanentemente en MMKV.
+  - Selector de género objetivo (`all`, `H`, `M`).
+  - Switch/Toggle para mezclar opcionalmente las preguntas personalizadas en los Niveles 1, 2 y 3.
+  - Desbloqueo interactivo mediante Rewarded Ad antes de iniciar ronda.
+- **Monetización AdMob Mejorada**:
+  - Migración a `useRewardedAd` (formato video/interactivo de 15-30s) para Nivel 3, Nivel 4 y Revancha en Podio.
+  - Implementación de `useInterstitialAd` con disparo automático cada 25 preguntas en partidas largas (con cooldown de seguridad de 4 minutos).
+- **Podio y Viralidad**:
+  - Botón **"📸 Compartir Podio"** con formateo dinámico y soporte nativo de `Share.share` para WhatsApp, Instagram y Telegram.
+  - Limpieza de shared values (`cancelAnimation`) en personajes flotantes y piezas de confeti para prevenir consumo de memoria en partidas consecutivas.
+- **Validación de Calidad**:
+  - `npx tsc --noEmit` limpio (0 errores de TypeScript).
+  - 19/19 tests unitarios pasando en Jest con mocks aislados de MMKV.

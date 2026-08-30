@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { BannerAd, BannerAdSize, MobileAds, useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, MobileAds, useRewardedAd } from 'react-native-google-mobile-ads';
 import Animated, {
   FadeInUp,
   useAnimatedStyle,
@@ -24,10 +24,10 @@ import { borderRadius, spacing } from '../theme/spacing';
 import { fontSizes, fontWeights, letterSpacings } from '../theme/typography';
 import DynamicBackground from '../components/DynamicBackground';
 import Header from '../components/ui/Header';
+import CustomQuestionsModal from '../components/CustomQuestionsModal';
 import { useGame } from '../context/GameContext';
 import { AD_UNIT_IDS } from '../ads/adUnits';
-
-type GameLevel = 1 | 2 | 3;
+import type { GameLevel } from '../types/game';
 
 type LevelCardData = {
   level: GameLevel;
@@ -35,6 +35,7 @@ type LevelCardData = {
   description: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   isPremium?: boolean;
+  isCustom?: boolean;
 };
 
 const LEVELS: LevelCardData[] = [
@@ -57,9 +58,17 @@ const LEVELS: LevelCardData[] = [
     icon: 'emoticon-devil-outline',
     isPremium: true,
   },
+  {
+    level: 4,
+    title: 'Modo Personalizado',
+    description: 'Preguntas creadas por tu grupo. Confesiones 100% locales.',
+    icon: 'pencil-box-multiple',
+    isCustom: true,
+    isPremium: true,
+  },
 ];
 
-const FAKE_AD_DURATION = 2000;
+const FAKE_AD_DURATION = 15000;
 
 type LevelSelectionScreenProps = {
   onBack: () => void;
@@ -68,16 +77,23 @@ type LevelSelectionScreenProps = {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
-  const { startGame, isLevel3Unlocked, unlockLevel3 } = useGame();
+  const {
+    startGame,
+    isLevel3Unlocked,
+    unlockLevel3,
+    isLevel4Unlocked,
+    unlockLevel4,
+    customQuestions,
+  } = useGame();
+
   const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [pendingStart, setPendingStart] = useState(false);
+  const [pendingLevel, setPendingLevel] = useState<GameLevel | null>(null);
+  const [showCustomModal, setShowCustomModal] = useState(false);
   const adsInitialized = useRef(false);
-  // Ref de control: true solo cuando ad.show() fue llamado en este ciclo.
   const adShownRef = useRef(false);
-  // Timeout de respaldo si el ad no carga en 5 segundos.
   const adLoadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const ad = useRewardedInterstitialAd(AD_UNIT_IDS.rewardedInterstitial);
+  const ad = useRewardedAd(AD_UNIT_IDS.rewarded);
 
   useEffect(() => {
     if (adsInitialized.current) return;
@@ -112,49 +128,57 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
     }
   }, [ad.isLoaded]);
 
-  const startLevel3Game = useCallback(() => {
-    setIsWatchingAd(false);
-    setPendingStart(false);
-    unlockLevel3();
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    startGame(3);
-  }, [unlockLevel3, startGame]);
-
-  const runFallbackAd = useCallback(() => {
-    setIsWatchingAd(true);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-
-    setTimeout(() => {
+  const startLevelGame = useCallback(
+    (lvl: GameLevel) => {
       setIsWatchingAd(false);
-      setPendingStart(false);
-      startLevel3Game();
-    }, FAKE_AD_DURATION);
-  }, [startLevel3Game]);
+      setPendingLevel(null);
+      if (lvl === 3) unlockLevel3();
+      if (lvl === 4) unlockLevel4();
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      startGame(lvl);
+    },
+    [unlockLevel3, unlockLevel4, startGame],
+  );
 
-  // Effect: cuando el ad está listo (o falla), actuar sobre pendingStart
+  const runFallbackAd = useCallback(
+    (lvl: GameLevel) => {
+      setIsWatchingAd(true);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+      setTimeout(() => {
+        setIsWatchingAd(false);
+        setPendingLevel(null);
+        startLevelGame(lvl);
+      }, FAKE_AD_DURATION);
+    },
+    [startLevelGame],
+  );
+
+  // Effect: cuando el ad está listo (o falla), actuar sobre pendingLevel
   useEffect(() => {
-    if (!pendingStart) return;
+    if (!pendingLevel) return;
 
     if (ad.isLoaded) {
       if (adLoadTimeoutRef.current) clearTimeout(adLoadTimeoutRef.current);
       setIsWatchingAd(true);
       adShownRef.current = true;
       ad.show();
-      setPendingStart(false);
       return;
     }
 
     if (ad.error) {
       if (adLoadTimeoutRef.current) clearTimeout(adLoadTimeoutRef.current);
-      setPendingStart(false);
-      runFallbackAd();
+      const target = pendingLevel;
+      setPendingLevel(null);
+      runFallbackAd(target);
       return;
     }
 
     // Ad aún cargando — fallback automático a los 5 segundos
     adLoadTimeoutRef.current = setTimeout(() => {
-      setPendingStart(false);
-      runFallbackAd();
+      const target = pendingLevel;
+      setPendingLevel(null);
+      runFallbackAd(target);
     }, 5000);
 
     return () => {
@@ -163,33 +187,50 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
         adLoadTimeoutRef.current = null;
       }
     };
-  }, [pendingStart, ad.isLoaded, ad.error, runFallbackAd]);
+  }, [pendingLevel, ad.isLoaded, ad.error, runFallbackAd]);
 
-  // Effect: ad cerrado — leer isEarnedReward directamente aquí (no en callback)
-  // para evitar el stale closure que causaba que startLevel3Game nunca se llamara
+  // Effect: ad cerrado — leer isEarnedReward directamente aquí
   useEffect(() => {
     if (!adShownRef.current || !ad.isClosed) return;
     adShownRef.current = false;
     setIsWatchingAd(false);
     ad.load(); // Precarga el siguiente
-    if (ad.isEarnedReward) {
-      startLevel3Game();
+    if (ad.isEarnedReward && pendingLevel) {
+      startLevelGame(pendingLevel);
+    } else {
+      setPendingLevel(null);
     }
-  }, [ad.isClosed, ad.isEarnedReward, startLevel3Game]);
+  }, [ad.isClosed, ad.isEarnedReward, pendingLevel, startLevelGame]);
 
   const handleLevelPress = (level: GameLevel) => {
     if (isWatchingAd) return;
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    if (level === 4) {
+      // Abre el modal para ver/añadir preguntas antes de iniciar
+      setShowCustomModal(true);
+      return;
+    }
+
     if (level === 3 && !isLevel3Unlocked) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       ad.load();
-      setPendingStart(true);
+      setPendingLevel(3);
       return;
     }
 
     startGame(level);
+  };
+
+  const handleStartCustomGameFromModal = () => {
+    setShowCustomModal(false);
+    if (!isLevel4Unlocked) {
+      ad.load();
+      setPendingLevel(4);
+      return;
+    }
+    startGame(4);
   };
 
   return (
@@ -217,10 +258,22 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
           showsVerticalScrollIndicator={false}
         >
           {LEVELS.map((item, index) => {
-            const isLocked = item.level === 3 && !isLevel3Unlocked && !isWatchingAd;
-            const isLoadingLevel3 = item.level === 3 && isWatchingAd;
-            const isUnlocked = item.level === 3 && isLevel3Unlocked && !isWatchingAd;
-            const levelColor = item.level === 1 ? colors.level1 : item.level === 2 ? colors.level2 : colors.level3;
+            const isLevelLocked =
+              (item.level === 3 && !isLevel3Unlocked) ||
+              (item.level === 4 && !isLevel4Unlocked);
+
+            const isLocked = isLevelLocked && !isWatchingAd;
+            const isLoadingThisLevel = pendingLevel === item.level && isWatchingAd;
+            const isUnlocked = !isLevelLocked && item.isPremium && !isWatchingAd;
+
+            const levelColor =
+              item.level === 1
+                ? colors.level1
+                : item.level === 2
+                  ? colors.level2
+                  : item.level === 3
+                    ? colors.level3
+                    : colors.level4;
 
             return (
               <Animated.View
@@ -236,7 +289,7 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
                       borderColor: item.isPremium ? levelColor.border : colors.border,
                     },
                     pressed && !isWatchingAd && styles.cardPressed,
-                    isWatchingAd && item.level !== 3 && styles.cardDisabled,
+                    isWatchingAd && pendingLevel !== item.level && styles.cardDisabled,
                   ]}
                 >
                   <View style={styles.cardHeader}>
@@ -263,13 +316,24 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
                   <Text style={styles.cardTitle}>{item.title}</Text>
                   <Text style={styles.cardDescription}>{item.description}</Text>
 
-                  {isLoadingLevel3 && (
+                  {item.level === 4 && (
+                    <View style={styles.customCountBadge}>
+                      <MaterialCommunityIcons name="comment-text-multiple-outline" size={14} color={colors.level4.accent} />
+                      <Text style={styles.customCountText}>
+                        {customQuestions.length === 0
+                          ? 'Toca para agregar preguntas'
+                          : `${customQuestions.length} preguntas guardadas (Toca para editar)`}
+                      </Text>
+                    </View>
+                  )}
+
+                  {isLoadingThisLevel && (
                     <View style={styles.loadingRow}>
                       <ActivityIndicator color={colors.accent} size="small" />
                       <Text style={styles.loadingText}>
                         {ad.isLoaded
-                          ? 'Preparando anuncio...'
-                          : 'Cargando anuncio para desbloquear...'}
+                          ? 'Mostrando video publicitario...'
+                          : 'Cargando video para desbloquear...'}
                       </Text>
                     </View>
                   )}
@@ -278,6 +342,12 @@ const LevelSelectionScreen = ({ onBack }: LevelSelectionScreenProps) => {
             );
           })}
         </ScrollView>
+
+        <CustomQuestionsModal
+          visible={showCustomModal}
+          onClose={() => setShowCustomModal(false)}
+          onStartCustomGame={handleStartCustomGameFromModal}
+        />
 
         <BannerAd
           unitId={AD_UNIT_IDS.banner}
@@ -391,6 +461,24 @@ const styles = StyleSheet.create({
     color: colors.accent,
     flex: 1,
     fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  customCountBadge: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceLight,
+    borderColor: colors.border,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  customCountText: {
+    color: colors.level4.accent,
+    fontSize: fontSizes.xs,
     fontWeight: fontWeights.semibold,
   },
 });
